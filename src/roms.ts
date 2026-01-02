@@ -293,6 +293,20 @@ function formatBytes(bytes: number): string {
 	return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`
 }
 
+function formatEta(seconds: number): string {
+	if (!Number.isFinite(seconds) || seconds < 0) return "--:--"
+	const total = Math.round(seconds)
+	const hrs = Math.floor(total / 3600)
+	const mins = Math.floor((total % 3600) / 60)
+	const secs = total % 60
+	if (hrs > 0) {
+		return `${hrs}:${mins.toString().padStart(2, "0")}:${secs
+			.toString()
+			.padStart(2, "0")}`
+	}
+	return `${mins}:${secs.toString().padStart(2, "0")}`
+}
+
 /**
  * Download ROMs for a single entry with backpressure control
  *
@@ -473,6 +487,7 @@ export async function downloadRomEntry(
 	const failedFiles: Array<{ filename: string; error: string }> = []
 	let completedCount = 0
 	let bytesDownloaded = 0
+	const startTime = Date.now()
 
 	// Create download tasks
 	const downloadTasks = toDownload.map(fileEntry => async () => {
@@ -512,9 +527,19 @@ export async function downloadRomEntry(
 			// Progress update
 			if (!options.quiet) {
 				const pct = Math.round((completedCount / toDownload.length) * 100)
+				const elapsedMs = Date.now() - startTime
+				const speedBps =
+					elapsedMs > 0 ? (bytesDownloaded * 1000) / elapsedMs : 0
+				const speedText = speedBps > 0 ? ` @ ${formatBytes(speedBps)}/s` : ""
+				const etaText =
+					totalBytes > 0 && speedBps > 0
+						? ` ETA ${formatEta(
+								Math.max(0, (totalBytes - bytesDownloaded) / speedBps),
+							)}`
+						: ""
 				process.stdout.write(
 					`\r${entry.label}: ${completedCount}/${toDownload.length} (${pct}%) - ` +
-						`${formatBytes(bytesDownloaded)} downloaded`,
+						`${formatBytes(bytesDownloaded)} downloaded${speedText}${etaText}`,
 				)
 			}
 		}
