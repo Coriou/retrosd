@@ -3,15 +3,7 @@
  * Ported from generate.sh with all download URLs
  */
 
-import {
-	mkdir,
-	symlink,
-	readlink,
-	unlink,
-	readdir,
-	rename,
-	rm,
-} from "node:fs/promises"
+import { mkdir, symlink, rename, rm } from "node:fs/promises"
 import { existsSync } from "node:fs"
 import { join } from "node:path"
 import { execSync } from "node:child_process"
@@ -22,7 +14,7 @@ import type {
 	Summary,
 	DownloadResult,
 } from "./types.js"
-import { downloadFile, fileExists } from "./download.js"
+import { downloadFile } from "./download.js"
 import { ui } from "./ui.js"
 
 const BASE_URL =

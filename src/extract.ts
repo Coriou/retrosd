@@ -105,7 +105,6 @@ export async function extractZip(
 
 	try {
 		zipFile = await openZip(archivePath)
-		const entryCount = zipFile.entryCount
 
 		// Process entries one by one (streaming, low memory)
 		await new Promise<void>((resolve, reject) => {

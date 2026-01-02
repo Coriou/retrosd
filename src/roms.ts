@@ -100,7 +100,7 @@ const SOURCE_URLS: Record<Source, string> = {
 /**
  * Map system keys to destination directories
  */
-const DEST_DIRS: Record<string, string> = {
+const _DEST_DIRS: Record<string, string> = {
 	FC_CART: "FC",
 	FC_FDS: "FC",
 	GB: "GB",
@@ -559,7 +559,7 @@ function formatBytes(bytes: number): string {
 	return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`
 }
 
-function formatEta(seconds: number): string {
+function _formatEta(seconds: number): string {
 	if (!Number.isFinite(seconds) || seconds < 0) return "--:--"
 	const total = Math.round(seconds)
 	const hrs = Math.floor(total / 3600)
@@ -888,7 +888,7 @@ export async function downloadRomEntry(
 	// Download with backpressure
 	const successFiles: string[] = []
 	const failedFiles: Array<{ filename: string; error: string }> = []
-	let completedCount = 0
+	let _completedCount = 0
 	let bytesDownloaded = 0
 	const startTime = Date.now()
 
@@ -953,7 +953,7 @@ export async function downloadRomEntry(
 		} finally {
 			// Always release, even on error
 			controller.release(estimatedBytes, estimatedBytes)
-			completedCount++
+			_completedCount++
 
 			// Update overall progress
 			const elapsedMs = Date.now() - startTime
