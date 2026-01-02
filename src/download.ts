@@ -11,17 +11,15 @@
 import {
 	createWriteStream,
 	existsSync,
-	renameSync,
-	unlinkSync,
-	statSync,
 	readdirSync,
-	openSync,
-	closeSync,
+	renameSync,
+	statSync,
+	unlinkSync,
 } from "node:fs"
 import { mkdir } from "node:fs/promises"
 import { dirname, join } from "node:path"
-import { pipeline } from "node:stream/promises"
 import { Readable } from "node:stream"
+import { pipeline } from "node:stream/promises"
 import { Agent, type Dispatcher, fetch as undiciFetch } from "undici"
 
 // Use Wget user agent to avoid rate limiting on Myrient
