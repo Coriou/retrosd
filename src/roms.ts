@@ -10,7 +10,7 @@
  */
 
 import { mkdir } from "node:fs/promises"
-import { existsSync, readdirSync, statSync } from "node:fs"
+import { existsSync, readdirSync, statSync, unlinkSync } from "node:fs"
 import { join, basename } from "node:path"
 import pLimit from "p-limit"
 import { fetch as undiciFetch } from "undici"
@@ -376,6 +376,9 @@ export async function downloadRomEntry(
 		size: sizeMap.get(filename) ?? 0,
 	}))
 
+	const getExpectedSize = (filename: string): number =>
+		sizeMap.get(filename) ?? 0
+
 	ui.debug(
 		`Listing: ${listing.length} files, after filter: ${filteredListing.length}`,
 		options.verbose,
@@ -531,29 +534,69 @@ export async function downloadRomEntry(
 
 		let extractedCount = 0
 		let extractFailed = 0
+		let recoveredCount = 0
 		const extractConcurrency = Math.min(8, Math.max(2, options.jobs ?? 4))
 		const limitExtract = pLimit(extractConcurrency)
 
 		const extractTasks = successFiles.map(filename =>
 			limitExtract(async () => {
 				const archivePath = join(destDir, filename)
+				const expectedSize = getExpectedSize(filename)
+				const url = `${baseUrl}/${entry.remotePath}${encodeURIComponent(filename)}`
 
 				if (existsSync(archivePath) && isZipArchive(filename)) {
-					const result = await extractZip(archivePath, destDir, {
-						extractGlob: entry.extractGlob,
-						deleteArchive: true, // Delete after successful extraction
-						flatten: true, // Extract to root of destDir
-					})
+					const attemptExtract = async (): Promise<boolean> => {
+						const result = await extractZip(archivePath, destDir, {
+							extractGlob: entry.extractGlob,
+							deleteArchive: true, // Delete after successful extraction
+							flatten: true, // Extract to root of destDir
+						})
 
-					if (result.success) {
-						extractedCount++
-					} else {
-						extractFailed++
+						if (result.success) {
+							extractedCount++
+							return true
+						}
+
 						ui.debug(
-							`Extract failed for ${filename}: ${result.error}`,
+							`Extract failed for ${filename}: ${result.error ?? "unknown"}`,
 							options.verbose,
 						)
+						return false
 					}
+
+					const initialOk = await attemptExtract()
+					if (initialOk) return
+
+					// Retry path: re-download then re-extract
+					try {
+						if (existsSync(archivePath)) {
+							unlinkSync(archivePath)
+						}
+					} catch {
+						// If unlink fails, continue to attempt re-download which will overwrite
+					}
+
+					const redownload = await downloadFile(
+						url,
+						archivePath,
+						{
+							retries: Math.max(2, options.retryCount),
+							delay: options.retryDelay,
+							quiet: true,
+							verbose: false,
+						},
+						expectedSize > 0 ? expectedSize : undefined,
+					)
+
+					if (redownload.success) {
+						const retryExtractOk = await attemptExtract()
+						if (retryExtractOk) {
+							recoveredCount++
+							return
+						}
+					}
+
+					extractFailed++
 				}
 			}),
 		)
@@ -561,7 +604,7 @@ export async function downloadRomEntry(
 		await Promise.all(extractTasks)
 
 		ui.debug(
-			`Extracted: ${extractedCount}, failed: ${extractFailed} (concurrency ${extractConcurrency})`,
+			`Extracted: ${extractedCount}, recovered via redownload: ${recoveredCount}, failed: ${extractFailed} (concurrency ${extractConcurrency})`,
 			options.verbose,
 		)
 	}
