@@ -1,10 +1,8 @@
-# RetroSD v2.0.0 - Feature Summary
+# RetroSD - Because I was gifted a retro-emulator console for Christmas
 
-## 🎉 What's New
+A comprehensive **ROM library manager** with DAT-style verification, metadata generation, and smart filtering.
 
-RetroSD has evolved from a simple ROM downloader into a comprehensive **ROM library manager** with DAT-style verification, metadata generation, and smart filtering.
-
-## ✨ New Features
+## Features
 
 ### 1. Smart 1G1R (One-Game-One-ROM) Filtering ✅
 
