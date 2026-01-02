@@ -38,6 +38,7 @@ import { extractZip, isZipArchive } from "./extract.js"
 import { ui } from "./ui.js"
 import { writeFileSync, readFileSync } from "node:fs"
 import { runParallel } from "./parallel.js"
+import { createProgressTracker } from "./progress.js"
 
 function resolveBackpressure(
 	profile: DiskProfile,
@@ -783,12 +784,12 @@ export async function downloadRomEntry(
 					skippedExisting++
 				}
 			} else if (hasArchive) {
+				// In non-update mode (resume), skip all existing files regardless of size
+				// Size mismatches should only trigger redownload when --update is used
 				if (fileEntry.size > 0 && localSize !== fileEntry.size) {
 					mismatchedExisting++
-					shouldDownload = true
-				} else {
-					skippedExisting++
 				}
+				skippedExisting++
 			} else if (!hasArchive && hasExtracted) {
 				skippedExisting++
 			}
@@ -847,11 +848,11 @@ export async function downloadRomEntry(
 	const bpConfig = resolveBackpressure(profile, options.jobs)
 
 	ui.info(
-		`${entry.label}: downloading ${toDownload.length} files ` +
-			`(${formatBytes(totalBytes)}, ${skippedExisting} existing ok` +
-			(mismatchedExisting > 0 ? `, ${mismatchedExisting} size-mismatch` : "") +
-			`) [profile: ${profile}, max ${bpConfig.maxConcurrent} concurrent, ` +
-			`${formatBytes(bpConfig.maxBytesInFlight)} max in-flight]`,
+		`${entry.label}: ${toDownload.length} files to download (${formatBytes(totalBytes)})` +
+			(skippedExisting > 0 ? ` • ${skippedExisting} already exist` : "") +
+			(mismatchedExisting > 0 && !effectiveUpdate
+				? ` • ${mismatchedExisting} size mismatches (use --update to redownload)`
+				: ""),
 	)
 
 	// Create backpressure controller
@@ -868,6 +869,9 @@ export async function downloadRomEntry(
 				}
 			: undefined,
 	})
+
+	// Create progress tracker for this ROM entry
+	const progressTracker = createProgressTracker(entry.label, options.quiet)
 
 	// Download with backpressure
 	const successFiles: string[] = []
@@ -887,16 +891,36 @@ export async function downloadRomEntry(
 		// Acquire slot (will wait if at capacity)
 		await controller.acquire(estimatedBytes)
 
+		// Start progress tracking for this download
+		const downloadId = `${entry.key}-${filename}`
+		if (expectedSize) {
+			progressTracker.startDownload(downloadId, filename, expectedSize)
+		}
+
 		try {
+			const downloadOptions: {
+				retries: number
+				delay: number
+				quiet: boolean
+				verbose: boolean
+				onProgress?: (current: number, total: number, speed: number) => void
+			} = {
+				retries: options.retryCount,
+				delay: options.retryDelay,
+				quiet: true,
+				verbose: false,
+			}
+
+			if (expectedSize) {
+				downloadOptions.onProgress = (current, total, speed) => {
+					progressTracker.updateDownload(downloadId, current, speed)
+				}
+			}
+
 			const result = await downloadFile(
 				url,
 				destPath,
-				{
-					retries: options.retryCount,
-					delay: options.retryDelay,
-					quiet: true,
-					verbose: false,
-				},
+				downloadOptions,
 				expectedSize,
 			)
 
@@ -907,8 +931,10 @@ export async function downloadRomEntry(
 				if (meta) {
 					setManifestEntry(options.manifest, entry.destDir, filename, meta)
 				}
+				progressTracker.completeDownload(downloadId, true)
 			} else {
 				failedFiles.push({ filename, error: result.error ?? "Unknown error" })
+				progressTracker.completeDownload(downloadId, false)
 			}
 
 			return result
@@ -917,39 +943,18 @@ export async function downloadRomEntry(
 			controller.release(estimatedBytes, estimatedBytes)
 			completedCount++
 
-			// Progress update - use line-based output every 10% or 50 files to avoid conflicts
-			if (!options.quiet) {
-				const pct = Math.round((completedCount / toDownload.length) * 100)
-				const prevPct = Math.round(
-					((completedCount - 1) / toDownload.length) * 100,
-				)
-				const shouldLog =
-					completedCount === toDownload.length || // Always log at 100%
-					(pct >= 10 && Math.floor(pct / 10) > Math.floor(prevPct / 10)) || // Every 10%
-					completedCount % 50 === 0 // Every 50 files
-
-				if (shouldLog) {
-					const elapsedMs = Date.now() - startTime
-					const speedBps =
-						elapsedMs > 0 ? (bytesDownloaded * 1000) / elapsedMs : 0
-					const speedText = speedBps > 0 ? ` @ ${formatBytes(speedBps)}/s` : ""
-					const etaText =
-						totalBytes > 0 && speedBps > 0
-							? ` ETA ${formatEta(
-									Math.max(0, (totalBytes - bytesDownloaded) / speedBps),
-								)}`
-							: ""
-					ui.info(
-						`${entry.label}: ${completedCount}/${toDownload.length} (${pct}%) - ` +
-							`${formatBytes(bytesDownloaded)} downloaded${speedText}${etaText}`,
-					)
-				}
-			}
+			// Update overall progress
+			const elapsedMs = Date.now() - startTime
+			const speedBps = elapsedMs > 0 ? (bytesDownloaded * 1000) / elapsedMs : 0
+			progressTracker.updateOverall(bytesDownloaded, totalBytes, speedBps)
 		}
 	})
 
 	// Run all tasks (backpressure handles concurrency)
 	await Promise.all(downloadTasks.map(task => task()))
+
+	// Stop progress tracker
+	progressTracker.stop()
 
 	// Extract archives if needed (streaming, non-blocking)
 	if (entry.extract && successFiles.length > 0) {

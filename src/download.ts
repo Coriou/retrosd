@@ -24,14 +24,17 @@ import { pipeline } from "node:stream/promises"
 import { Readable } from "node:stream"
 import { Agent, type Dispatcher, fetch as undiciFetch } from "undici"
 
-const USER_AGENT =
-	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) retrosd-cli/1.0.0"
+// Use Wget user agent to avoid rate limiting on Myrient
+// (matches official myrient-downloader implementation)
+const USER_AGENT = "Wget/1.21.3 (linux-gnu)"
 
 // Shared keep-alive agent to maximize connection reuse across downloads
+// Aggressive settings for optimal download speed
 export const HTTP_AGENT: Dispatcher = new Agent({
-	keepAliveTimeout: 10_000,
-	keepAliveMaxTimeout: 60_000,
-	connections: 32,
+	keepAliveTimeout: 30_000, // 30s keep-alive
+	keepAliveMaxTimeout: 120_000, // 2min max
+	connections: 64, // Allow more concurrent connections for parallel downloads
+	pipelining: 10, // HTTP pipelining for better throughput
 })
 
 export interface DownloadOptions {
@@ -39,6 +42,7 @@ export interface DownloadOptions {
 	delay: number
 	quiet: boolean
 	verbose: boolean
+	onProgress?: (current: number, total: number, speed: number) => void
 }
 
 export interface DownloadResult {
@@ -177,7 +181,44 @@ export async function downloadFile(
 				highWaterMark: 1024 * 1024, // 1MB buffer for better disk throughput
 			})
 
-			await pipeline(Readable.fromWeb(response.body as never), fileStream)
+			// Track progress if callback provided
+			let bytesWritten = existingSize
+			let lastProgressUpdate = Date.now()
+			let lastProgressBytes = bytesWritten
+			const progressInterval = 500 // Update every 500ms
+
+			const bodyStream = Readable.fromWeb(response.body as never)
+
+			if (options.onProgress && totalSize) {
+				// Add progress tracking to stream events
+				bodyStream.on("data", chunk => {
+					bytesWritten += chunk.length
+
+					const now = Date.now()
+					if (now - lastProgressUpdate >= progressInterval) {
+						const elapsed = (now - lastProgressUpdate) / 1000
+						const deltaBytes = bytesWritten - lastProgressBytes
+						const speed = deltaBytes / elapsed
+
+						options.onProgress?.(bytesWritten, totalSize, speed)
+
+						lastProgressUpdate = now
+						lastProgressBytes = bytesWritten
+					}
+				})
+
+				bodyStream.on("end", () => {
+					// Final progress update on completion
+					if (options.onProgress && totalSize) {
+						const elapsed = (Date.now() - lastProgressUpdate) / 1000
+						const deltaBytes = bytesWritten - lastProgressBytes
+						const speed = elapsed > 0 ? deltaBytes / elapsed : 0
+						options.onProgress(bytesWritten, totalSize, speed)
+					}
+				})
+			}
+
+			await pipeline(bodyStream, fileStream)
 
 			// Verify file has content
 			const finalStats = statSync(partPath)

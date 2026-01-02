@@ -88,6 +88,8 @@ export const ui = {
 
 	/** Final status line */
 	finalStatus(allSuccess: boolean): void {
+		// Use direct console.log to avoid any spinner conflicts
+		// Add extra newline to ensure visibility
 		console.log()
 		if (allSuccess) {
 			console.log(chalk.green.bold("✓ All operations completed successfully!"))
@@ -96,5 +98,6 @@ export const ui = {
 				chalk.yellow.bold("⚠ Some operations failed. See above for details."),
 			)
 		}
+		console.log() // Extra newline for visibility
 	},
 }
