@@ -172,6 +172,35 @@ retrosd export /path/to/sdcard -o collection.json
 - **Exclusion filters** work alongside 1G1R
 - **Custom regex** still supported for power users
 
+#### Content Exclusion Filters
+
+By default, RetroSD filters out pre-release and unlicensed content to maintain a clean, official game collection:
+
+**`--include-prerelease`** - Include pre-release versions (excluded by default)
+
+- **Filters out:** Beta, Demo, Proto, Sample, Preview versions
+- **Example:** `Pokemon Gold (USA) (Beta).gb` is excluded by default
+- **Use case:** Collectors who want development/prototype ROMs
+
+**`--include-unlicensed`** - Include unlicensed/pirate versions (excluded by default)
+
+- **Filters out:** Unlicensed (Unl), Pirate, Bootleg releases
+- **Example:** `Super Mario 4 (Pirate).gb` is excluded by default
+- **Use case:** Preservation or testing unofficial releases
+
+**Combine both flags** to include everything, or use neither for curated official releases only.
+
+```bash
+# Default: official releases only (no betas, no pirates)
+retrosd --systems=GB /path/to/sdcard
+
+# Include beta/demo versions
+retrosd --systems=GB --include-prerelease /path/to/sdcard
+
+# Include everything (official + betas + unlicensed)
+retrosd --systems=GB --include-prerelease --include-unlicensed /path/to/sdcard
+```
+
 ### Smarter Downloads
 
 - Metadata generation happens automatically (disable with `--no-metadata`)
