@@ -40,6 +40,8 @@ export interface DownloadOptions {
 	delay: number
 	quiet: boolean
 	verbose: boolean
+	headers?: Record<string, string>
+	agent?: Dispatcher
 	onProgress?: (current: number, total: number, speed: number) => void
 }
 
@@ -47,6 +49,8 @@ export interface DownloadResult {
 	success: boolean
 	skipped: boolean
 	bytesDownloaded: number
+	statusCode?: number
+	contentType?: string | undefined
 	error?: string
 }
 
@@ -102,6 +106,7 @@ export async function downloadFile(
 			const existingSize = getPartialSize(partPath)
 			const headers: Record<string, string> = {
 				"User-Agent": USER_AGENT,
+				...options.headers,
 			}
 
 			// Request remaining bytes if we have a partial file
@@ -111,12 +116,17 @@ export async function downloadFile(
 
 			const response = await undiciFetch(url, {
 				headers,
-				dispatcher: HTTP_AGENT,
+				dispatcher: options.agent ?? HTTP_AGENT,
 			})
 
 			if (response.status === 304) {
 				// Not modified - file is complete
-				return { success: true, skipped: true, bytesDownloaded: 0 }
+				return {
+					success: true,
+					skipped: true,
+					bytesDownloaded: 0,
+					statusCode: 304,
+				}
 			}
 
 			if (response.status === 404) {
@@ -126,6 +136,7 @@ export async function downloadFile(
 					success: false,
 					skipped: false,
 					bytesDownloaded: 0,
+					statusCode: 404,
 					error: "Not found (404)",
 				}
 			}
@@ -136,11 +147,22 @@ export async function downloadFile(
 				if (expectedSize !== undefined && existingSize >= expectedSize) {
 					// We have all bytes, rename to final
 					renameSync(partPath, destPath)
-					return { success: true, skipped: false, bytesDownloaded: 0 }
+					return {
+						success: true,
+						skipped: false,
+						bytesDownloaded: 0,
+						statusCode: 416,
+					}
 				}
 				// Corrupted partial, start fresh
 				cleanupPartFile(partPath)
-				continue // Retry from start
+				// Don't loop infinitely - count this as an attempt or just continue to next iteration which will start fresh
+				// If we just continue, we might hit 416 again if the server is broken.
+				// Let's treat it as a retryable error but ensure we don't get stuck.
+				// Since we cleaned up the part file, the next request won't have Range header, so it shouldn't be 416.
+				// But we should increment attempt to be safe against broken servers.
+				attempt++
+				continue
 			}
 
 			if (!response.ok && response.status !== 206) {
@@ -242,7 +264,13 @@ export async function downloadFile(
 			const bytesDownloaded = isResume
 				? finalStats.size - existingSize
 				: finalStats.size
-			return { success: true, skipped: false, bytesDownloaded }
+			return {
+				success: true,
+				skipped: false,
+				bytesDownloaded,
+				statusCode: response.status,
+				contentType: response.headers.get("content-type") || undefined,
+			}
 		} catch (err) {
 			// Don't clean up .part file on network errors - keep for resume
 			// Only clean on unrecoverable errors (404, empty file)

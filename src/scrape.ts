@@ -3,13 +3,32 @@
  * Downloads box art, screenshots, videos for EmulationStation
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	writeFileSync,
+	openSync,
+	readSync,
+	closeSync,
+	unlinkSync,
+	statSync,
+} from "node:fs"
 import { dirname, extname, join } from "node:path"
 import pLimit from "p-limit"
-import { fetch as undiciFetch } from "undici"
+import { fetch as undiciFetch, Agent } from "undici"
 import { downloadFile, HTTP_AGENT } from "./download.js"
 import { loadMetadata } from "./metadata.js"
 import { ui } from "./ui.js"
+
+/**
+ * Conservative agent for ScreenScraper to avoid rate limiting
+ */
+const SCREENSCRAPER_AGENT = new Agent({
+	keepAliveTimeout: 30_000,
+	connections: 8, // Limit concurrent connections
+	pipelining: 0, // Disable pipelining
+})
 
 /**
  * Lane-based rate limiter for proper multi-threaded API access
@@ -54,10 +73,10 @@ interface GameCacheEntry {
 	name: string
 	region: string
 	media: {
-		boxFront?: string
-		boxBack?: string
-		screenshot?: string
-		video?: string
+		boxFront?: { url: string; format: string }
+		boxBack?: { url: string; format: string }
+		screenshot?: { url: string; format: string }
+		video?: { url: string; format: string }
 	}
 	timestamp: number
 }
@@ -236,30 +255,6 @@ function guessRomType(system: string, filename: string): "rom" | "iso" {
 	return "rom"
 }
 
-/**
- * Extract file extension from media URL, preferring smaller formats
- */
-function getMediaExtension(url: string, defaultExt: string = ".png"): string {
-	try {
-		const urlObj = new URL(url)
-		const pathname = urlObj.pathname.toLowerCase()
-
-		// Common image extensions
-		if (pathname.includes(".jpg") || pathname.includes(".jpeg")) return ".jpg"
-		if (pathname.includes(".png")) return ".png"
-		if (pathname.includes(".gif")) return ".gif"
-		if (pathname.includes(".webp")) return ".webp"
-
-		// Video extensions
-		if (pathname.includes(".mp4")) return ".mp4"
-		if (pathname.includes(".webm")) return ".webm"
-
-		return defaultExt
-	} catch {
-		return defaultExt
-	}
-}
-
 function isRomFilename(
 	filename: string,
 	system: string,
@@ -395,10 +390,10 @@ interface ScreenScraperGame {
 	name: string
 	region: string
 	media: {
-		boxFront?: string
-		boxBack?: string
-		screenshot?: string
-		video?: string
+		boxFront?: { url: string; format: string }
+		boxBack?: { url: string; format: string }
+		screenshot?: { url: string; format: string }
+		video?: { url: string; format: string }
 	}
 }
 
@@ -539,19 +534,19 @@ async function searchScreenScraper(
 					// Box art - prefer world region, fallback to any
 					if (m.type === "box-2D") {
 						if (!media.boxFront || m.region === "wor" || m.region === "us") {
-							media.boxFront = m.url
+							media.boxFront = { url: m.url, format: m.format }
 						}
 					} else if (m.type === "box-2D-back") {
 						if (!media.boxBack || m.region === "wor" || m.region === "us") {
-							media.boxBack = m.url
+							media.boxBack = { url: m.url, format: m.format }
 						}
 					} else if (m.type === "ss" || m.type === "ss-game") {
 						if (!media.screenshot || m.region === "wor" || m.region === "us") {
-							media.screenshot = m.url
+							media.screenshot = { url: m.url, format: m.format }
 						}
 					} else if (m.type === "video" || m.type === "video-normalized") {
 						if (!media.video) {
-							media.video = m.url
+							media.video = { url: m.url, format: m.format }
 						}
 					}
 				}
@@ -582,19 +577,23 @@ async function searchScreenScraper(
  * Validate downloaded media file to ensure it's not an error page
  */
 async function validateMediaFile(filePath: string): Promise<boolean> {
-	const { statSync, readFileSync, unlinkSync } = await import("node:fs")
-
 	try {
 		// Check minimum file size (error pages are usually small)
 		const stats = statSync(filePath)
 		if (stats.size < 1024) {
 			// Less than 1KB is suspicious for media
+			unlinkSync(filePath)
 			return false
 		}
 
 		// Check magic bytes to detect HTML/JSON error responses
-		const buffer = readFileSync(filePath, { encoding: null })
-		const start = buffer.subarray(0, 512).toString("utf-8", 0, 512)
+		// Read only first 512 bytes
+		const fd = openSync(filePath, "r")
+		const buffer = Buffer.alloc(512)
+		const bytesRead = readSync(fd, buffer, 0, 512, 0)
+		closeSync(fd)
+
+		const start = buffer.subarray(0, bytesRead).toString("utf-8")
 
 		// Detect HTML error pages
 		if (
@@ -645,53 +644,39 @@ async function downloadMedia(
 
 	for (let attempt = 0; attempt < maxRetries; attempt++) {
 		try {
-			const response = await undiciFetch(url, {
-				headers: { "User-Agent": "RetroSD/2.0.0" },
-				dispatcher: HTTP_AGENT,
-			})
-
-			// Check for rate limiting or server errors
-			if (response.status === 429 || response.status >= 500) {
-				if (verbose && attempt < maxRetries - 1) {
-					console.log(
-						`[Download] Rate limited or server error (${response.status}), retrying...`,
-					)
-				}
-				await sleep(baseRetryDelayMs * (attempt + 1))
-				continue
-			}
-
-			if (!response.ok) {
-				if (verbose) {
-					console.error(`[Download] HTTP ${response.status} for ${url}`)
-				}
-				return false
-			}
-
-			// Validate content-type to avoid HTML error pages
-			const contentType = response.headers.get("content-type") || ""
-			if (
-				contentType.includes("text/html") ||
-				contentType.includes("application/json")
-			) {
-				if (verbose) {
-					console.error(
-						`[Download] Invalid content-type: ${contentType} for ${url}`,
-					)
-				}
-				await sleep(baseRetryDelayMs * (attempt + 1))
-				continue
-			}
-
-			// Download using existing function
+			// Download using existing function with ScreenScraper specific settings
 			const result = await downloadFile(url, destPath, {
 				retries: 1,
 				delay: 1,
 				quiet: true,
 				verbose: false,
+				headers: { "User-Agent": "RetroSD/2.0.0" },
+				agent: SCREENSCRAPER_AGENT,
 			})
 
 			if (result.success) {
+				// Check for skipped (304) or already exists
+				if (result.skipped) {
+					return true
+				}
+
+				// Validate content-type if available
+				if (result.contentType) {
+					if (
+						result.contentType.includes("text/html") ||
+						result.contentType.includes("application/json")
+					) {
+						if (verbose) {
+							console.error(
+								`[Download] Invalid content-type: ${result.contentType} for ${url}`,
+							)
+						}
+						unlinkSync(destPath)
+						await sleep(baseRetryDelayMs * (attempt + 1))
+						continue
+					}
+				}
+
 				// Validate the downloaded file
 				const isValid = await validateMediaFile(destPath)
 				if (!isValid) {
@@ -708,6 +693,19 @@ async function downloadMedia(
 					console.log(`[Download] ✓ ${destPath}`)
 				}
 				return true
+			} else if (result.statusCode === 404) {
+				// Not found, don't retry
+				if (verbose) {
+					console.error(`[Download] 404 Not Found: ${url}`)
+				}
+				return false
+			} else {
+				// Other error
+				if (verbose && attempt < maxRetries - 1) {
+					console.log(
+						`[Download] Error: ${result.error || result.statusCode}, retrying...`,
+					)
+				}
 			}
 		} catch (err) {
 			if (verbose && attempt === maxRetries - 1) {
@@ -731,6 +729,7 @@ interface LookupSuccess {
 	baseName: string
 	romDir: string
 	game: ScreenScraperGame
+	systemId: number
 }
 
 interface LookupFailure {
@@ -836,6 +835,7 @@ async function lookupGameForRom(
 		baseName,
 		romDir,
 		game,
+		systemId,
 	}
 }
 
@@ -872,6 +872,7 @@ async function downloadMediaForGame(
 	game: ScreenScraperGame,
 	baseName: string,
 	mediaDir: string,
+	systemId: number,
 	options: ScrapeOptions,
 	schedule?: DownloadScheduler,
 ): Promise<MediaDownloadResult> {
@@ -894,19 +895,31 @@ async function downloadMediaForGame(
 
 	mkdirSync(mediaDir, { recursive: true })
 
+	const baseUrl = "https://api.screenscraper.fr/api2"
+	const commonParams = new URLSearchParams({
+		devid: options.devId || ENV_DEV_ID,
+		devpassword: options.devPassword || ENV_DEV_PASSWORD,
+		ssid: options.username || "",
+		sspassword: options.password || "",
+		systemeid: systemId.toString(),
+		jeuid: game.id,
+	})
+
 	const downloadTasks: Array<Promise<void>> = []
 
 	if (wantsBox && game.media.boxFront) {
-		const ext = getMediaExtension(game.media.boxFront, ".png")
+		const format = game.media.boxFront.format
+		const ext = format.startsWith(".") ? format : `.${format}`
 		const boxPath = join(mediaDir, `${baseName}-box${ext}`)
+
+		// Construct mediaJeu.php URL
+		const params = new URLSearchParams(commonParams)
+		params.set("media", "box-2D")
+		const url = `${baseUrl}/mediaJeu.php?${params.toString()}`
+
 		downloadTasks.push(
 			run(async () => {
-				const result = await ensureMediaFile(
-					game.media.boxFront!,
-					boxPath,
-					overwrite,
-					verbose,
-				)
+				const result = await ensureMediaFile(url, boxPath, overwrite, verbose)
 				if (result.ok) {
 					mediaResult.media.boxArt = boxPath
 					mediaResult.hadAny = true
@@ -930,16 +943,18 @@ async function downloadMediaForGame(
 	}
 
 	if (wantsSS && game.media.screenshot) {
-		const ext = getMediaExtension(game.media.screenshot, ".png")
+		const format = game.media.screenshot.format
+		const ext = format.startsWith(".") ? format : `.${format}`
 		const ssPath = join(mediaDir, `${baseName}-screenshot${ext}`)
+
+		// Construct mediaJeu.php URL
+		const params = new URLSearchParams(commonParams)
+		params.set("media", "ss")
+		const url = `${baseUrl}/mediaJeu.php?${params.toString()}`
+
 		downloadTasks.push(
 			run(async () => {
-				const result = await ensureMediaFile(
-					game.media.screenshot!,
-					ssPath,
-					overwrite,
-					verbose,
-				)
+				const result = await ensureMediaFile(url, ssPath, overwrite, verbose)
 				if (result.ok) {
 					mediaResult.media.screenshot = ssPath
 					mediaResult.hadAny = true
@@ -963,16 +978,18 @@ async function downloadMediaForGame(
 	}
 
 	if (wantsVideo && game.media.video) {
-		const ext = getMediaExtension(game.media.video, ".mp4")
+		const format = game.media.video.format
+		const ext = format.startsWith(".") ? format : `.${format}`
 		const videoPath = join(mediaDir, `${baseName}-video${ext}`)
+
+		// Construct mediaVideoJeu.php URL
+		const params = new URLSearchParams(commonParams)
+		params.set("media", "video")
+		const url = `${baseUrl}/mediaVideoJeu.php?${params.toString()}`
+
 		downloadTasks.push(
 			run(async () => {
-				const result = await ensureMediaFile(
-					game.media.video!,
-					videoPath,
-					overwrite,
-					verbose,
-				)
+				const result = await ensureMediaFile(url, videoPath, overwrite, verbose)
 				if (result.ok) {
 					mediaResult.media.video = videoPath
 					mediaResult.hadAny = true
@@ -1037,6 +1054,7 @@ export async function scrapeRom(
 		lookup.game,
 		lookup.baseName,
 		mediaDir,
+		lookup.systemId,
 		options,
 	)
 
@@ -1102,6 +1120,22 @@ export async function scrapeSystem(
 	// Initialize cache
 	const cacheFile = join(systemDir, ".screenscraper-cache.json")
 	const cache = new GameCache(cacheFile)
+
+	// Check for dev credentials
+	const devCreds = resolveDevCredentials({
+		devId: options.devId,
+		devPassword: options.devPassword,
+	})
+
+	if (!devCreds.devId || !devCreds.devPassword) {
+		const error =
+			"ScreenScraper developer credentials required. Set SCREENSCRAPER_DEV_ID/SCREENSCRAPER_DEV_PASSWORD or pass --dev-id/--dev-password."
+		if (!options.quiet) {
+			if (spinner) spinner.stop()
+			ui.error(error)
+		}
+		return { total, success: 0, failed: total, skipped: 0 }
+	}
 
 	// Create lane-based rate limiter for API lookups
 	// Each lane can make requests at the specified rate
@@ -1206,6 +1240,7 @@ export async function scrapeSystem(
 						lookup.game,
 						lookup.baseName,
 						mediaDir,
+						lookup.systemId,
 						options,
 						downloadLimit,
 					)
