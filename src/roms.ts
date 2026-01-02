@@ -10,8 +10,10 @@
  */
 
 import { mkdir } from "node:fs/promises"
-import { existsSync, readdirSync } from "node:fs"
+import { existsSync, readdirSync, statSync } from "node:fs"
 import { join, basename } from "node:path"
+import pLimit from "p-limit"
+import { fetch as undiciFetch } from "undici"
 import type {
 	RomEntry,
 	Source,
@@ -21,7 +23,7 @@ import type {
 	RegionPreset,
 	DiskProfile,
 } from "./types.js"
-import { downloadFile, anyExtensionExists } from "./download.js"
+import { downloadFile, anyExtensionExists, HTTP_AGENT } from "./download.js"
 import {
 	applyFilters,
 	getPresetFilter,
@@ -328,11 +330,12 @@ export async function downloadRomEntry(
 	// Fetch directory listing with sizes
 	let listing: FileEntry[]
 	try {
-		const response = await fetch(`${baseUrl}/${entry.remotePath}`, {
+		const response = await undiciFetch(`${baseUrl}/${entry.remotePath}`, {
 			headers: {
 				"User-Agent":
 					"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) retrosd-cli/1.0.0",
 			},
+			dispatcher: HTTP_AGENT,
 		})
 
 		if (!response.ok) {
@@ -380,6 +383,7 @@ export async function downloadRomEntry(
 
 	// Check which files need downloading
 	let skippedExisting = 0
+	let mismatchedExisting = 0
 	const toDownload: FileEntry[] = []
 	let totalBytes = 0
 
@@ -389,11 +393,33 @@ export async function downloadRomEntry(
 			entry.filename.lastIndexOf("."),
 		)
 
-		// Check if file already exists (either archive or extracted)
-		if (
-			existsSync(join(destDir, entry.filename)) ||
-			anyExtensionExists(destDir, baseNoExt)
-		) {
+		const archivePath = join(destDir, entry.filename)
+		const hasArchive = existsSync(archivePath)
+		const hasExtracted = anyExtensionExists(destDir, baseNoExt)
+
+		if (hasArchive) {
+			try {
+				if (entry.size > 0) {
+					const localSize = statSync(archivePath).size
+					if (localSize === entry.size) {
+						skippedExisting++
+						continue
+					}
+
+					// Size mismatch – schedule re-download
+					mismatchedExisting++
+				} else {
+					// Unknown remote size, trust existing archive
+					skippedExisting++
+					continue
+				}
+			} catch {
+				// If we can't stat the file, fall through to re-download
+			}
+		}
+
+		// If archive is gone but extracted files exist, trust the extracted copy
+		if (!hasArchive && hasExtracted) {
 			skippedExisting++
 			continue
 		}
@@ -418,8 +444,9 @@ export async function downloadRomEntry(
 
 	ui.info(
 		`${entry.label}: downloading ${toDownload.length} files ` +
-			`(${formatBytes(totalBytes)}, ${skippedExisting} skipped) ` +
-			`[profile: ${profile}, max ${bpConfig.maxConcurrent} concurrent, ` +
+			`(${formatBytes(totalBytes)}, ${skippedExisting} existing ok` +
+			(mismatchedExisting > 0 ? `, ${mismatchedExisting} size-mismatch` : "") +
+			`) [profile: ${profile}, max ${bpConfig.maxConcurrent} concurrent, ` +
 			`${formatBytes(bpConfig.maxBytesInFlight)} max in-flight]`,
 	)
 
@@ -504,31 +531,37 @@ export async function downloadRomEntry(
 
 		let extractedCount = 0
 		let extractFailed = 0
+		const extractConcurrency = Math.min(8, Math.max(2, options.jobs ?? 4))
+		const limitExtract = pLimit(extractConcurrency)
 
-		for (const filename of successFiles) {
-			const archivePath = join(destDir, filename)
+		const extractTasks = successFiles.map(filename =>
+			limitExtract(async () => {
+				const archivePath = join(destDir, filename)
 
-			if (existsSync(archivePath) && isZipArchive(filename)) {
-				const result = await extractZip(archivePath, destDir, {
-					extractGlob: entry.extractGlob,
-					deleteArchive: true, // Delete after successful extraction
-					flatten: true, // Extract to root of destDir
-				})
+				if (existsSync(archivePath) && isZipArchive(filename)) {
+					const result = await extractZip(archivePath, destDir, {
+						extractGlob: entry.extractGlob,
+						deleteArchive: true, // Delete after successful extraction
+						flatten: true, // Extract to root of destDir
+					})
 
-				if (result.success) {
-					extractedCount++
-				} else {
-					extractFailed++
-					ui.debug(
-						`Extract failed for ${filename}: ${result.error}`,
-						options.verbose,
-					)
+					if (result.success) {
+						extractedCount++
+					} else {
+						extractFailed++
+						ui.debug(
+							`Extract failed for ${filename}: ${result.error}`,
+							options.verbose,
+						)
+					}
 				}
-			}
-		}
+			}),
+		)
+
+		await Promise.all(extractTasks)
 
 		ui.debug(
-			`Extracted: ${extractedCount}, failed: ${extractFailed}`,
+			`Extracted: ${extractedCount}, failed: ${extractFailed} (concurrency ${extractConcurrency})`,
 			options.verbose,
 		)
 	}

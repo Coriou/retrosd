@@ -168,18 +168,18 @@ export class BackpressureController {
 export const BACKPRESSURE_DEFAULTS = {
 	/** Good for local SSDs */
 	fast: {
-		maxBytesInFlight: 200 * 1024 * 1024, // 200MB
-		maxConcurrent: 12,
+		maxBytesInFlight: 400 * 1024 * 1024, // 400MB for high-bandwidth SSDs
+		maxConcurrent: 16,
 	},
 	/** Balanced for most systems */
 	balanced: {
-		maxBytesInFlight: 100 * 1024 * 1024, // 100MB
-		maxConcurrent: 8,
+		maxBytesInFlight: 200 * 1024 * 1024, // 200MB
+		maxConcurrent: 12,
 	},
 	/** Conservative for NAS/HDD/slow SD cards */
 	slow: {
-		maxBytesInFlight: 50 * 1024 * 1024, // 50MB
-		maxConcurrent: 4,
+		maxBytesInFlight: 75 * 1024 * 1024, // 75MB
+		maxConcurrent: 6,
 	},
 } as const
 

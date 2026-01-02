@@ -22,9 +22,17 @@ import { mkdir } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { pipeline } from "node:stream/promises"
 import { Readable } from "node:stream"
+import { Agent, type Dispatcher, fetch as undiciFetch } from "undici"
 
 const USER_AGENT =
 	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) retrosd-cli/1.0.0"
+
+// Shared keep-alive agent to maximize connection reuse across downloads
+export const HTTP_AGENT: Dispatcher = new Agent({
+	keepAliveTimeout: 10_000,
+	keepAliveMaxTimeout: 60_000,
+	connections: 16,
+})
 
 export interface DownloadOptions {
 	retries: number
@@ -99,7 +107,10 @@ export async function downloadFile(
 				headers["Range"] = `bytes=${existingSize}-`
 			}
 
-			const response = await fetch(url, { headers })
+			const response = await undiciFetch(url, {
+				headers,
+				dispatcher: HTTP_AGENT,
+			})
 
 			if (response.status === 304) {
 				// Not modified - file is complete
