@@ -1,39 +1,44 @@
 /**
  * Terminal output helpers with consistent styling
+ *
+ * Spinner-aware: when an ora spinner is active, all output goes through
+ * spinnerSafeLog() to avoid conflicts (flickering, line overwrites).
  */
 
 import chalk from "chalk"
+import { spinnerSafeLog } from "./parallel.js"
 
 export const ui = {
 	/** Section header with decorative border */
 	header(text: string): void {
-		console.log(chalk.cyan.bold(`\n═══ ${text} ═══\n`))
+		spinnerSafeLog(chalk.cyan.bold(`\n═══ ${text} ═══\n`))
 	},
 
 	/** Success message with checkmark */
 	success(text: string): void {
-		console.log(chalk.green("✓") + " " + text)
+		spinnerSafeLog(chalk.green("✓") + " " + text)
 	},
 
 	/** Error message with X mark */
 	error(text: string): void {
-		console.error(chalk.red("✗") + " " + text)
+		// Errors go to stderr, but still need spinner handling
+		spinnerSafeLog(chalk.red("✗") + " " + text)
 	},
 
 	/** Warning message */
 	warn(text: string): void {
-		console.error(chalk.yellow("⚠") + " " + text)
+		spinnerSafeLog(chalk.yellow("⚠") + " " + text)
 	},
 
 	/** Info message */
 	info(text: string): void {
-		console.log(chalk.blue("ℹ") + " " + text)
+		spinnerSafeLog(chalk.blue("ℹ") + " " + text)
 	},
 
 	/** Debug message (only shown if verbose) */
 	debug(text: string, verbose: boolean): void {
 		if (verbose) {
-			console.log(chalk.dim("  → " + text))
+			spinnerSafeLog(chalk.dim("  → " + text))
 		}
 	},
 

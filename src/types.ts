@@ -117,5 +117,6 @@ export interface CliOptions {
 	verbose: boolean
 	includePrerelease: boolean
 	includeUnlicensed: boolean
+	update: boolean
 	diskProfile?: DiskProfile
 }

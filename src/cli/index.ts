@@ -6,7 +6,6 @@
 
 import "../bootstrap.js"
 import { existsSync } from "node:fs"
-import { mkdir } from "node:fs/promises"
 import { join } from "node:path"
 import { Command } from "commander"
 import { loadConfig } from "../config.js"
@@ -17,7 +16,6 @@ import {
 	createRomDirectories,
 	getEntriesBySources,
 	getEntriesByKeys,
-	ROM_ENTRIES,
 } from "../roms.js"
 import {
 	promptConfirmRomDownload,
@@ -26,6 +24,7 @@ import {
 	promptFilter,
 	setupPromptHandlers,
 } from "../prompts.js"
+import { loadPreferences, updatePreferences } from "../preferences.js"
 import type {
 	Source,
 	RomEntry,
@@ -66,6 +65,7 @@ program
 	.option("--verbose", "Debug output", false)
 	.option("--include-prerelease", "Include beta/demo/proto ROMs", false)
 	.option("--include-unlicensed", "Include unlicensed/pirate ROMs", false)
+	.option("--update", "Revalidate remote ROMs and redownload if changed", false)
 	.option(
 		"--disk-profile <profile>",
 		"Disk speed profile: fast (SSD), balanced (HDD), slow (SD card/NAS)",
@@ -93,6 +93,7 @@ interface CliArgs {
 	verbose: boolean
 	includePrerelease: boolean
 	includeUnlicensed: boolean
+	update: boolean
 	diskProfile: string
 }
 
@@ -121,6 +122,7 @@ async function run(
 		options.includePrerelease ?? config.includePrerelease
 	const includeUnlicensed =
 		options.includeUnlicensed ?? config.includeUnlicensed
+	const update = options.update
 
 	// Validate disk profile
 	const validProfiles = ["fast", "balanced", "slow"] as const
@@ -165,6 +167,7 @@ async function run(
 		jobs,
 		retryCount: config.retryCount,
 		retryDelay: config.retryDelay,
+		update,
 	}
 
 	// Track results for summary
@@ -185,6 +188,9 @@ async function run(
 	// ─────────────────────────────────────────────────────────────────────────────
 
 	if (!biosOnly) {
+		// Load saved preferences for interactive prompts
+		const savedPrefs = loadPreferences(target)
+
 		let selectedSources: Source[]
 		let selectedEntries: RomEntry[]
 		let preset: RegionPreset | undefined
@@ -201,14 +207,14 @@ async function run(
 			return
 		} else {
 			// Interactive: prompt for confirmation first
-			const shouldDownloadRoms = await promptConfirmRomDownload()
+			const shouldDownloadRoms = await promptConfirmRomDownload(savedPrefs)
 			if (!shouldDownloadRoms) {
 				ui.info("Skipping ROM downloads.")
 				await printSummary(allBiosResults, allRomResults, dryRun)
 				return
 			}
 
-			selectedSources = await promptSources()
+			selectedSources = await promptSources(savedPrefs)
 		}
 
 		// Handle systems
@@ -220,7 +226,7 @@ async function run(
 		} else if (nonInteractive) {
 			selectedEntries = getEntriesBySources(selectedSources)
 		} else {
-			selectedEntries = await promptSystems(selectedSources)
+			selectedEntries = await promptSystems(selectedSources, savedPrefs)
 		}
 
 		if (selectedEntries.length === 0) {
@@ -235,9 +241,37 @@ async function run(
 		} else if (options.filter) {
 			filter = options.filter
 		} else if (!nonInteractive) {
-			const filterChoice = await promptFilter()
+			const filterChoice = await promptFilter(savedPrefs)
 			preset = filterChoice.preset
 			filter = filterChoice.custom
+		}
+
+		// Save user selections for next run
+		if (!nonInteractive) {
+			// Build preferences update, clearing the conflicting filter setting
+			if (filter !== undefined) {
+				// Custom filter: save it and signal clearing preset
+				updatePreferences(target, {
+					confirmRomDownload: true,
+					sources: selectedSources,
+					systems: selectedEntries.map(e => e.key),
+					customFilter: filter,
+				})
+			} else if (preset !== undefined) {
+				// Preset: save it and signal clearing custom filter
+				updatePreferences(target, {
+					confirmRomDownload: true,
+					sources: selectedSources,
+					systems: selectedEntries.map(e => e.key),
+					preset,
+				})
+			} else {
+				updatePreferences(target, {
+					confirmRomDownload: true,
+					sources: selectedSources,
+					systems: selectedEntries.map(e => e.key),
+				})
+			}
 		}
 
 		// Download ROMs

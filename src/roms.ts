@@ -1,9 +1,9 @@
 /**
  * ROM source definitions and download logic
  *
- * State-of-the-art implementation with:
+ * Implementation highlights:
  * - Backpressure control (bytes + concurrency limits)
- * - File size parsing from directory listings
+ * - File size + last-modified parsing from directory listings
  * - Range resume support via .part files
  * - Streaming ZIP extraction with yauzl
  * - Adaptive concurrency for different disk speeds
@@ -11,7 +11,7 @@
 
 import { mkdir } from "node:fs/promises"
 import { existsSync, readdirSync, statSync, unlinkSync } from "node:fs"
-import { join, basename } from "node:path"
+import { join } from "node:path"
 import pLimit from "p-limit"
 import { fetch as undiciFetch } from "undici"
 import type {
@@ -36,6 +36,25 @@ import {
 } from "./backpressure.js"
 import { extractZip, isZipArchive } from "./extract.js"
 import { ui } from "./ui.js"
+import { writeFileSync, readFileSync } from "node:fs"
+import { runParallel } from "./parallel.js"
+
+function resolveBackpressure(
+	profile: DiskProfile,
+	jobs: number,
+): { maxBytesInFlight: number; maxConcurrent: number } {
+	const base = BACKPRESSURE_DEFAULTS[profile]
+	const targetConcurrent = Math.max(1, Math.min(32, jobs || base.maxConcurrent))
+	const bytesPerTask = base.maxBytesInFlight / base.maxConcurrent
+	const maxBytesInFlight = Math.max(
+		bytesPerTask * targetConcurrent,
+		bytesPerTask * 2,
+	)
+	return {
+		maxBytesInFlight,
+		maxConcurrent: targetConcurrent,
+	}
+}
 
 /**
  * Parsed file entry with size information
@@ -43,6 +62,27 @@ import { ui } from "./ui.js"
 interface FileEntry {
 	filename: string
 	size: number // bytes, 0 if unknown
+	lastModified?: string // ISO string if parseable
+}
+
+interface RemoteMeta {
+	size?: number
+	etag?: string
+	lastModified?: string
+}
+
+interface ManifestEntry {
+	filename: string
+	size?: number
+	etag?: string
+	lastModified?: string
+	updatedAt: string
+}
+
+interface ManifestFile {
+	version: number
+	entries: Record<string, ManifestEntry>
+	directories?: Record<string, { lastModified?: string; updatedAt: string }>
 }
 
 /**
@@ -68,6 +108,101 @@ const DEST_DIRS: Record<string, string> = {
 	PKM: "PKM",
 	SGB: "SGB",
 	PS: "PS",
+}
+
+const MANIFEST_FILE = ".retrosd-manifest.json"
+
+function manifestKey(destDir: string, filename: string): string {
+	return `${destDir}/${filename}`
+}
+
+function loadManifest(romsDir: string): ManifestFile {
+	try {
+		const raw = readFileSync(join(romsDir, MANIFEST_FILE), "utf8")
+		const parsed = JSON.parse(raw) as ManifestFile
+		if (parsed && parsed.version === 1 && parsed.entries) {
+			return {
+				version: 1,
+				entries: parsed.entries,
+				directories: parsed.directories ?? {},
+			}
+		}
+	} catch {
+		// Fresh manifest
+	}
+
+	return { version: 1, entries: {}, directories: {} }
+}
+
+function saveManifest(romsDir: string, manifest: ManifestFile): void {
+	try {
+		writeFileSync(
+			join(romsDir, MANIFEST_FILE),
+			JSON.stringify(manifest, null, 2),
+			"utf8",
+		)
+	} catch {
+		// Best-effort; do not fail downloads if manifest write fails
+	}
+}
+
+function setManifestEntry(
+	manifest: ManifestFile,
+	destDir: string,
+	filename: string,
+	meta: RemoteMeta | null,
+): void {
+	const key = manifestKey(destDir, filename)
+	const entry: ManifestEntry = {
+		filename,
+		updatedAt: new Date().toISOString(),
+	}
+	if (meta?.size !== undefined) entry.size = meta.size
+	if (meta?.etag !== undefined) entry.etag = meta.etag
+	if (meta?.lastModified !== undefined) entry.lastModified = meta.lastModified
+	manifest.entries[key] = entry
+}
+
+function setManifestDirectoryLastModified(
+	manifest: ManifestFile,
+	entryKey: string,
+	lastModified: string | undefined,
+): void {
+	if (!manifest.directories) manifest.directories = {}
+	const record: { lastModified?: string; updatedAt: string } = {
+		updatedAt: new Date().toISOString(),
+	}
+	if (lastModified !== undefined) record.lastModified = lastModified
+	manifest.directories[entryKey] = record
+}
+
+async function headRemoteMeta(url: string): Promise<RemoteMeta | null> {
+	try {
+		const res = await undiciFetch(url, {
+			method: "HEAD",
+			headers: {
+				"User-Agent":
+					"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) retrosd-cli/1.0.0",
+			},
+			dispatcher: HTTP_AGENT,
+		})
+
+		if (!res.ok) return null
+
+		const sizeHeader = res.headers.get("content-length")
+		const etagHeader = res.headers.get("etag")
+		const lastModifiedRaw = res.headers.get("last-modified")
+		const lastModified = normalizeLastModified(lastModifiedRaw ?? undefined)
+
+		const size = sizeHeader ? parseInt(sizeHeader, 10) : undefined
+		const meta: RemoteMeta = {}
+		if (Number.isFinite(size) && size !== undefined) meta.size = size
+		if (etagHeader !== null) meta.etag = etagHeader
+		if (lastModified !== undefined) meta.lastModified = lastModified
+		return Object.keys(meta).length > 0 ? meta : null
+	} catch {
+		return null
+	}
 }
 
 /**
@@ -200,6 +335,92 @@ export function getEntriesByKeys(keys: string[]): RomEntry[] {
 	return ROM_ENTRIES.filter(entry => keys.includes(entry.key))
 }
 
+function safeDecodeURIComponent(value: string): string {
+	try {
+		return decodeURIComponent(value)
+	} catch {
+		return value
+	}
+}
+
+function parseMyrientLastModified(value: string): string | undefined {
+	const trimmed = value.trim()
+	if (!trimmed || trimmed === "-") return undefined
+
+	// Common Myrient format: "04-Jan-2023 09:01"
+	const match = trimmed.match(
+		/^(\d{2})-([A-Za-z]{3})-(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/,
+	)
+	if (!match) return undefined
+
+	const day = parseInt(match[1] ?? "", 10)
+	const monthAbbr = (match[2] ?? "").toLowerCase()
+	const year = parseInt(match[3] ?? "", 10)
+	const hour = parseInt(match[4] ?? "", 10)
+	const minute = parseInt(match[5] ?? "", 10)
+	const second = parseInt(match[6] ?? "0", 10)
+
+	const monthIndexMap: Record<string, number> = {
+		jan: 0,
+		feb: 1,
+		mar: 2,
+		apr: 3,
+		may: 4,
+		jun: 5,
+		jul: 6,
+		aug: 7,
+		sep: 8,
+		oct: 9,
+		nov: 10,
+		dec: 11,
+	}
+	const monthIndex = monthIndexMap[monthAbbr]
+	if (!Number.isFinite(monthIndex)) return undefined
+
+	if (
+		![day, year, hour, minute, second].every(n => Number.isFinite(n) && n >= 0)
+	) {
+		return undefined
+	}
+
+	const ms = Date.UTC(year, monthIndex, day, hour, minute, second)
+	const dt = new Date(ms)
+	if (Number.isNaN(dt.getTime())) return undefined
+	return dt.toISOString()
+}
+
+function normalizeLastModified(value: string | undefined): string | undefined {
+	if (!value) return undefined
+	const trimmed = value.trim()
+	if (!trimmed || trimmed === "-") return undefined
+
+	const myrient = parseMyrientLastModified(trimmed)
+	if (myrient) return myrient
+
+	const ms = Date.parse(trimmed)
+	if (!Number.isFinite(ms)) return undefined
+	const dt = new Date(ms)
+	if (Number.isNaN(dt.getTime())) return undefined
+	return dt.toISOString()
+}
+
+function parseDirectoryLastModified(html: string): string | undefined {
+	// Look for the "./" row, which Myrient uses to show the directory's last update
+	const tableRow = html.match(
+		/<tr[^>]*>\s*<td[^>]*>\s*<a\s+href="\.\/"[^>]*>\.?\/?<\/a>\s*<\/td>\s*<td[^>]*>\s*[^<]*\s*<\/td>\s*<td[^>]*>\s*([^<]*)\s*<\/td>/im,
+	)
+	if (tableRow && tableRow[1]) {
+		return parseMyrientLastModified(tableRow[1])
+	}
+
+	const pipeRow = html.match(/^\|\s*\.\/?\s*\|\s*-\s*\|\s*([^|]+?)\s*\|/im)
+	if (pipeRow && pipeRow[1]) {
+		return parseMyrientLastModified(pipeRow[1])
+	}
+
+	return undefined
+}
+
 /**
  * Parse listing HTML from myrient to extract file links AND sizes
  *
@@ -210,49 +431,67 @@ export function getEntriesByKeys(keys: string[]): RomEntry[] {
 function parseListing(html: string, archiveRegex: RegExp): FileEntry[] {
 	const entries: FileEntry[] = []
 
-	// Match href and the text following it which contains date and size
-	// Pattern: href="filename"   ...   SIZE
-	const lines = html.split("\n")
+	const pushRow = (href: string, sizeCell: string, lmCell: string): void => {
+		if (!href) return
+		if (href === "../" || href === "./" || href === ".." || href === ".") return
+		if (href.endsWith("/")) return
 
-	for (const line of lines) {
-		// Match: href="something.zip" followed by size info
-		const hrefMatch = line.match(/href="([^"]+)"/)
-		if (!hrefMatch) continue
+		const filename = safeDecodeURIComponent(href)
+		if (!archiveRegex.test(filename)) return
 
-		const href = hrefMatch[1]
-		if (!href || !archiveRegex.test(href)) continue
+		const sizeText = sizeCell.trim()
+		const size = sizeText === "-" ? 0 : Math.round(parseSize(sizeText))
+		const lastModified = parseMyrientLastModified(lmCell)
+		const entry: FileEntry = { filename, size }
+		if (lastModified !== undefined) entry.lastModified = lastModified
+		entries.push(entry)
+	}
 
-		const filename = decodeURIComponent(href)
+	// Myrient listings are typically HTML tables:
+	// <tr><td><a href="file.zip">file.zip</a></td><td>35.9 KiB</td><td>04-Jan-2023 09:01</td></tr>
+	const tableRowRegex =
+		/<tr[^>]*>\s*<td[^>]*>\s*<a\s+href="([^"]+)"[^>]*>[^<]+<\/a>\s*<\/td>\s*<td[^>]*>\s*([^<]*)\s*<\/td>\s*<td[^>]*>\s*([^<]*)\s*<\/td>/gim
+	let match: RegExpExecArray | null
+	while ((match = tableRowRegex.exec(html)) !== null) {
+		pushRow(match[1] ?? "", match[2] ?? "", match[3] ?? "")
+	}
 
-		// Try to extract size from the same line
-		// Myrient format: filename.zip</a>    01-Jan-2025 12:00    1.2M
-		// Size is typically the last non-whitespace group
-		const sizeMatch = line.match(/(\d+(?:\.\d+)?)\s*([KMGT]?)\s*$/i)
-
-		let size = 0
-		if (sizeMatch && sizeMatch[1]) {
-			const num = parseFloat(sizeMatch[1])
-			const unit = (sizeMatch[2] ?? "").toUpperCase()
-
-			switch (unit) {
-				case "K":
-					size = num * 1024
-					break
-				case "M":
-					size = num * 1024 * 1024
-					break
-				case "G":
-					size = num * 1024 * 1024 * 1024
-					break
-				case "T":
-					size = num * 1024 * 1024 * 1024 * 1024
-					break
-				default:
-					size = num // raw bytes
-			}
+	// Fallback: line-by-line parse for legacy indexes
+	if (entries.length === 0) {
+		// Some renderers show the listing as a pipe table:
+		// | file.zip | 35.9 KiB | 04-Jan-2023 09:01 |
+		const pipeRowRegex =
+			/^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|/gim
+		while ((match = pipeRowRegex.exec(html)) !== null) {
+			const name = (match[1] ?? "").trim()
+			if (!name || name.endsWith("/")) continue
+			pushRow(name, match[2] ?? "", match[3] ?? "")
 		}
 
-		entries.push({ filename, size: Math.round(size) })
+		if (entries.length === 0) {
+			const lines = html.split("\n")
+			for (const line of lines) {
+				const hrefMatch = line.match(/href="([^"]+)"/)
+				if (!hrefMatch) continue
+				const href = hrefMatch[1] ?? ""
+				if (!href || href.endsWith("/")) continue
+				const filename = safeDecodeURIComponent(href)
+				if (!archiveRegex.test(filename)) continue
+				const sizeMatch = line.match(/(\d[\d.,]*\s*[KMGT]i?B?)/i)
+				const lmMatch =
+					line.match(/(\d{2}-[A-Za-z]{3}-\d{4}\s+\d{2}:\d{2}(?::\d{2})?)/) ??
+					null
+				const out: FileEntry = {
+					filename,
+					size: Math.round(sizeMatch ? parseSize(sizeMatch[1] ?? "") : 0),
+				}
+				const lm = lmMatch
+					? parseMyrientLastModified(lmMatch[1] ?? "")
+					: undefined
+				if (lm !== undefined) out.lastModified = lm
+				entries.push(out)
+			}
+		}
 	}
 
 	return entries
@@ -262,23 +501,46 @@ function parseListing(html: string, archiveRegex: RegExp): FileEntry[] {
  * Parse size string (e.g., "1.2M", "500K") to bytes
  */
 function parseSize(sizeStr: string): number {
-	const match = sizeStr.trim().match(/^(\d+(?:\.\d+)?)\s*([KMGT]?)$/i)
+	const trimmed = sizeStr.trim()
+	if (!trimmed || trimmed === "-") return 0
+
+	const match = trimmed.match(/^(\d[\d.,]*)(?:\s*([A-Za-z]+))?$/)
 	if (!match || !match[1]) return 0
 
-	const num = parseFloat(match[1])
-	const unit = (match[2] ?? "").toUpperCase()
+	const num = parseFloat(match[1].replace(/,/g, ""))
+	if (!Number.isFinite(num)) return 0
+
+	const rawUnit = (match[2] ?? "").toLowerCase()
+	const unit = rawUnit.replace(/\s+/g, "")
 
 	switch (unit) {
-		case "K":
+		case "":
+		case "b":
+		case "bytes":
+			return num
+		case "k":
+		case "kb":
+		case "kib":
 			return num * 1024
-		case "M":
+		case "m":
+		case "mb":
+		case "mib":
 			return num * 1024 * 1024
-		case "G":
+		case "g":
+		case "gb":
+		case "gib":
 			return num * 1024 * 1024 * 1024
-		case "T":
+		case "t":
+		case "tb":
+		case "tib":
 			return num * 1024 * 1024 * 1024 * 1024
 		default:
-			return num
+			// Handle "KiB" etc that may include a trailing "b" already
+			if (unit.endsWith("ib")) {
+				const base = unit[0]
+				return parseSize(`${match[1]} ${base}`)
+			}
+			return 0
 	}
 }
 
@@ -325,6 +587,8 @@ export async function downloadRomEntry(
 		includePrerelease: boolean
 		includeUnlicensed: boolean
 		diskProfile?: DiskProfile
+		update: boolean
+		manifest: ManifestFile
 	},
 ): Promise<DownloadResult> {
 	const baseUrl = SOURCE_URLS[entry.source]
@@ -343,6 +607,8 @@ export async function downloadRomEntry(
 
 	// Fetch directory listing with sizes
 	let listing: FileEntry[]
+	let directoryLastModified: string | undefined
+	let effectiveUpdate = options.update
 	try {
 		const response = await undiciFetch(`${baseUrl}/${entry.remotePath}`, {
 			headers: {
@@ -357,7 +623,26 @@ export async function downloadRomEntry(
 		}
 
 		const html = await response.text()
+		directoryLastModified = parseDirectoryLastModified(html)
+		const previousDirLastModified =
+			options.manifest.directories?.[entry.key]?.lastModified
+		if (
+			options.update &&
+			directoryLastModified &&
+			previousDirLastModified &&
+			directoryLastModified === previousDirLastModified
+		) {
+			effectiveUpdate = false
+		}
+
 		listing = parseListing(html, entry.archiveRegex)
+		if (directoryLastModified) {
+			setManifestDirectoryLastModified(
+				options.manifest,
+				entry.key,
+				directoryLastModified,
+			)
+		}
 	} catch (err) {
 		return {
 			label: `${entry.label} [${entry.source}]`,
@@ -385,10 +670,15 @@ export async function downloadRomEntry(
 
 	// Create a map for quick size lookup
 	const sizeMap = new Map(listing.map(e => [e.filename, e.size]))
-	const filteredListing = filteredFilenames.map(filename => ({
-		filename,
-		size: sizeMap.get(filename) ?? 0,
-	}))
+	const lastModifiedMap = new Map(
+		listing.map(e => [e.filename, e.lastModified]),
+	)
+	const filteredListing = filteredFilenames.map(filename => {
+		const lastModified = lastModifiedMap.get(filename)
+		const out: FileEntry = { filename, size: sizeMap.get(filename) ?? 0 }
+		if (lastModified !== undefined) out.lastModified = lastModified
+		return out
+	})
 
 	const getExpectedSize = (filename: string): number =>
 		sizeMap.get(filename) ?? 0
@@ -401,48 +691,145 @@ export async function downloadRomEntry(
 	// Check which files need downloading
 	let skippedExisting = 0
 	let mismatchedExisting = 0
-	const toDownload: FileEntry[] = []
+	const toDownload: Array<{
+		file: FileEntry
+		meta: RemoteMeta | null
+		estimatedBytes: number
+		expectedSize?: number
+	}> = []
 	let totalBytes = 0
 
-	for (const entry of filteredListing) {
-		const baseNoExt = entry.filename.substring(
-			0,
-			entry.filename.lastIndexOf("."),
-		)
-
-		const archivePath = join(destDir, entry.filename)
+	for (const fileEntry of filteredListing) {
+		const { filename } = fileEntry
+		const baseNoExt = filename.substring(0, filename.lastIndexOf("."))
+		const archivePath = join(destDir, filename)
 		const hasArchive = existsSync(archivePath)
 		const hasExtracted = anyExtensionExists(destDir, baseNoExt)
+		const key = manifestKey(entry.destDir, filename)
+		const manifestEntry = options.manifest.entries[key]
+		const url = `${baseUrl}/${entry.remotePath}${encodeURIComponent(filename)}`
 
-		if (hasArchive) {
-			try {
-				if (entry.size > 0) {
-					const localSize = statSync(archivePath).size
-					if (localSize === entry.size) {
-						skippedExisting++
-						continue
-					}
+		let remoteMeta: RemoteMeta | null = null
+		let remoteSize = fileEntry.size
+		const listingLastModified = fileEntry.lastModified
 
-					// Size mismatch – schedule re-download
-					mismatchedExisting++
-				} else {
-					// Unknown remote size, trust existing archive
-					skippedExisting++
-					continue
-				}
-			} catch {
-				// If we can't stat the file, fall through to re-download
+		if (remoteSize > 0 || listingLastModified) {
+			remoteMeta = {
+				...(remoteSize > 0 ? { size: remoteSize } : {}),
+				...(listingLastModified ? { lastModified: listingLastModified } : {}),
 			}
 		}
 
-		// If archive is gone but extracted files exist, trust the extracted copy
-		if (!hasArchive && hasExtracted) {
-			skippedExisting++
-			continue
+		// Prefer listing metadata (fast). Only fall back to HEAD when update checks
+		// require metadata that's missing from the listing.
+		if (
+			effectiveUpdate &&
+			(hasArchive || hasExtracted || manifestEntry) &&
+			(!listingLastModified || remoteSize === 0)
+		) {
+			const headMeta = await headRemoteMeta(url)
+			if (headMeta) {
+				remoteMeta = {
+					...remoteMeta,
+					...headMeta,
+				}
+			}
+			if (remoteMeta?.size && Number.isFinite(remoteMeta.size)) {
+				remoteSize = remoteMeta.size
+			}
 		}
 
-		toDownload.push(entry)
-		totalBytes += entry.size
+		let shouldDownload = !hasArchive && !hasExtracted
+		let localSize = 0
+		if (hasArchive) {
+			try {
+				localSize = statSync(archivePath).size
+			} catch {
+				localSize = 0
+			}
+		}
+
+		if (!shouldDownload) {
+			if (effectiveUpdate) {
+				// Update logic prefers listing-provided last-modified. Manifest is used as
+				// the local reference point (especially when archives are deleted after extraction).
+				const sizeChanged =
+					(remoteSize > 0 && localSize > 0 && remoteSize !== localSize) ||
+					(remoteSize > 0 &&
+						!hasArchive &&
+						manifestEntry?.size &&
+						remoteSize !== manifestEntry.size)
+
+				const etagChanged =
+					remoteMeta?.etag && manifestEntry?.etag
+						? remoteMeta.etag !== manifestEntry.etag
+						: false
+
+				const remoteLastModified = normalizeLastModified(
+					remoteMeta?.lastModified,
+				)
+				const localLastModified = normalizeLastModified(
+					manifestEntry?.lastModified,
+				)
+				const lastModifiedChanged =
+					remoteLastModified && localLastModified
+						? remoteLastModified !== localLastModified
+						: false
+
+				// If manifest is missing but we have local content, treat as up-to-date
+				// and record listing metadata for future update checks.
+				shouldDownload = sizeChanged || etagChanged || lastModifiedChanged
+				if (!shouldDownload) {
+					skippedExisting++
+				}
+			} else if (hasArchive) {
+				if (fileEntry.size > 0 && localSize !== fileEntry.size) {
+					mismatchedExisting++
+					shouldDownload = true
+				} else {
+					skippedExisting++
+				}
+			} else if (!hasArchive && hasExtracted) {
+				skippedExisting++
+			}
+		}
+
+		if (shouldDownload) {
+			const expectedSize = remoteSize > 0 ? remoteSize : undefined
+			const estimatedBytes = expectedSize ?? 8 * 1024 * 1024 // reserve 8MB when unknown
+			toDownload.push({
+				file: {
+					filename: fileEntry.filename,
+					size: remoteSize,
+					...(fileEntry.lastModified !== undefined
+						? { lastModified: fileEntry.lastModified }
+						: {}),
+				},
+				meta: remoteMeta,
+				estimatedBytes,
+				...(expectedSize !== undefined ? { expectedSize } : {}),
+			})
+			totalBytes += estimatedBytes
+		} else {
+			const inferredMeta =
+				remoteMeta ??
+				(remoteSize > 0 || listingLastModified
+					? {
+							...(remoteSize > 0 ? { size: remoteSize } : {}),
+							...(listingLastModified
+								? { lastModified: listingLastModified }
+								: {}),
+						}
+					: undefined)
+			if (inferredMeta) {
+				setManifestEntry(
+					options.manifest,
+					entry.destDir,
+					filename,
+					inferredMeta,
+				)
+			}
+		}
 	}
 
 	if (toDownload.length === 0) {
@@ -455,9 +842,9 @@ export async function downloadRomEntry(
 		}
 	}
 
-	// Select backpressure profile
+	// Select backpressure profile (honor user jobs)
 	const profile = options.diskProfile ?? "balanced"
-	const bpConfig = BACKPRESSURE_DEFAULTS[profile]
+	const bpConfig = resolveBackpressure(profile, options.jobs)
 
 	ui.info(
 		`${entry.label}: downloading ${toDownload.length} files ` +
@@ -490,13 +877,15 @@ export async function downloadRomEntry(
 	const startTime = Date.now()
 
 	// Create download tasks
-	const downloadTasks = toDownload.map(fileEntry => async () => {
-		const { filename, size } = fileEntry
+	const downloadTasks = toDownload.map(item => async () => {
+		const { filename } = item.file
 		const destPath = join(destDir, filename)
 		const url = `${baseUrl}/${entry.remotePath}${encodeURIComponent(filename)}`
+		const estimatedBytes = item.estimatedBytes
+		const expectedSize = item.expectedSize
 
 		// Acquire slot (will wait if at capacity)
-		await controller.acquire(size)
+		await controller.acquire(estimatedBytes)
 
 		try {
 			const result = await downloadFile(
@@ -508,12 +897,16 @@ export async function downloadRomEntry(
 					quiet: true,
 					verbose: false,
 				},
-				size > 0 ? size : undefined,
+				expectedSize,
 			)
 
 			if (result.success) {
 				successFiles.push(filename)
 				bytesDownloaded += result.bytesDownloaded
+				const meta = item.meta ?? (expectedSize ? { size: expectedSize } : null)
+				if (meta) {
+					setManifestEntry(options.manifest, entry.destDir, filename, meta)
+				}
 			} else {
 				failedFiles.push({ filename, error: result.error ?? "Unknown error" })
 			}
@@ -521,37 +914,42 @@ export async function downloadRomEntry(
 			return result
 		} finally {
 			// Always release, even on error
-			controller.release(size, size)
+			controller.release(estimatedBytes, estimatedBytes)
 			completedCount++
 
-			// Progress update
+			// Progress update - use line-based output every 10% or 50 files to avoid conflicts
 			if (!options.quiet) {
 				const pct = Math.round((completedCount / toDownload.length) * 100)
-				const elapsedMs = Date.now() - startTime
-				const speedBps =
-					elapsedMs > 0 ? (bytesDownloaded * 1000) / elapsedMs : 0
-				const speedText = speedBps > 0 ? ` @ ${formatBytes(speedBps)}/s` : ""
-				const etaText =
-					totalBytes > 0 && speedBps > 0
-						? ` ETA ${formatEta(
-								Math.max(0, (totalBytes - bytesDownloaded) / speedBps),
-							)}`
-						: ""
-				process.stdout.write(
-					`\r${entry.label}: ${completedCount}/${toDownload.length} (${pct}%) - ` +
-						`${formatBytes(bytesDownloaded)} downloaded${speedText}${etaText}`,
+				const prevPct = Math.round(
+					((completedCount - 1) / toDownload.length) * 100,
 				)
+				const shouldLog =
+					completedCount === toDownload.length || // Always log at 100%
+					(pct >= 10 && Math.floor(pct / 10) > Math.floor(prevPct / 10)) || // Every 10%
+					completedCount % 50 === 0 // Every 50 files
+
+				if (shouldLog) {
+					const elapsedMs = Date.now() - startTime
+					const speedBps =
+						elapsedMs > 0 ? (bytesDownloaded * 1000) / elapsedMs : 0
+					const speedText = speedBps > 0 ? ` @ ${formatBytes(speedBps)}/s` : ""
+					const etaText =
+						totalBytes > 0 && speedBps > 0
+							? ` ETA ${formatEta(
+									Math.max(0, (totalBytes - bytesDownloaded) / speedBps),
+								)}`
+							: ""
+					ui.info(
+						`${entry.label}: ${completedCount}/${toDownload.length} (${pct}%) - ` +
+							`${formatBytes(bytesDownloaded)} downloaded${speedText}${etaText}`,
+					)
+				}
 			}
 		}
 	})
 
 	// Run all tasks (backpressure handles concurrency)
 	await Promise.all(downloadTasks.map(task => task()))
-
-	// Clear progress line
-	if (!options.quiet) {
-		process.stdout.write("\n")
-	}
 
 	// Extract archives if needed (streaming, non-blocking)
 	if (entry.extract && successFiles.length > 0) {
@@ -669,16 +1067,36 @@ export async function downloadRoms(
 		includePrerelease: boolean
 		includeUnlicensed: boolean
 		diskProfile?: DiskProfile
+		update: boolean
 	},
 ): Promise<Summary> {
 	ui.header("Downloading ROMs")
 
+	const manifest = loadManifest(romsDir)
 	const results: DownloadResult[] = []
 
-	for (const entry of entries) {
-		const result = await downloadRomEntry(entry, romsDir, options)
+	// Allow limited parallelism across systems to keep disks busy without thrashing
+	const systemConcurrency = Math.max(
+		1,
+		Math.min(entries.length, Math.max(1, Math.floor((options.jobs ?? 4) / 2))),
+	)
+
+	const runner = async (entry: RomEntry, _index: number): Promise<void> => {
+		const result = await downloadRomEntry(entry, romsDir, {
+			...options,
+			manifest,
+		})
 		results.push(result)
 	}
+
+	await runParallel(entries, runner, {
+		concurrency: systemConcurrency,
+		label: "ROM systems",
+		quiet: options.quiet,
+		noSpinner: true, // Each entry shows its own download progress
+	})
+
+	saveManifest(romsDir, manifest)
 
 	const completed = results.filter(r => r.success)
 	const failed = results.filter(r => !r.success)

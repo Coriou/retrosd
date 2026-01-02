@@ -116,8 +116,8 @@ export async function extractZip(
 			zf.on("error", reject)
 			zf.on("end", resolve)
 
-			zf.on("entry", async (entry: yauzl.Entry) => {
-				try {
+			zf.on("entry", (entry: yauzl.Entry) => {
+				void (async () => {
 					// Skip directories
 					if (entry.fileName.endsWith("/")) {
 						zf.readEntry()
@@ -156,9 +156,7 @@ export async function extractZip(
 
 					// Continue to next entry
 					zf.readEntry()
-				} catch (err) {
-					reject(err)
-				}
+				})().catch(reject)
 			})
 
 			// Start reading entries

@@ -36,38 +36,41 @@ npm run cli -- --non-interactive --sources=no-intro --systems=GB,GBA --preset=us
 
 ### Options
 
-| Option | Description |
-|--------|-------------|
-| `-n, --dry-run` | Preview actions without downloading |
-| `-j, --jobs <n>` | Parallel downloads (default: 4) |
-| `--bios-only` | Only download BIOS files |
-| `--roms-only` | Only download ROMs (skip BIOS) |
-| `--preset <name>` | Filter: `usa`, `english`, `ntsc`, `pal`, `japanese`, `all` |
-| `-f, --filter <regex>` | Custom filter pattern |
-| `--sources <list>` | Comma-separated: `no-intro`, `redump` |
-| `--systems <list>` | Comma-separated: `GB`, `GBA`, `MD`, `FC_CART`, etc. |
-| `--resume` | Skip existing files |
-| `--non-interactive` | No prompts (for CI/scripts) |
-| `-q, --quiet` | Minimal output |
-| `--verbose` | Debug output |
-| `--include-prerelease` | Include beta/demo/proto ROMs |
-| `--include-unlicensed` | Include unlicensed/pirate ROMs |
+| Option                 | Description                                                |
+| ---------------------- | ---------------------------------------------------------- |
+| `-n, --dry-run`        | Preview actions without downloading                        |
+| `-j, --jobs <n>`       | Parallel downloads (default: 4)                            |
+| `--bios-only`          | Only download BIOS files                                   |
+| `--roms-only`          | Only download ROMs (skip BIOS)                             |
+| `--preset <name>`      | Filter: `usa`, `english`, `ntsc`, `pal`, `japanese`, `all` |
+| `-f, --filter <regex>` | Custom filter pattern                                      |
+| `--sources <list>`     | Comma-separated: `no-intro`, `redump`                      |
+| `--systems <list>`     | Comma-separated: `GB`, `GBA`, `MD`, `FC_CART`, etc.        |
+| `--resume`             | Skip existing files                                        |
+| `--update`             | Revalidate remote ROMs and redownload if changed           |
+| `--non-interactive`    | No prompts (for CI/scripts)                                |
+| `-q, --quiet`          | Minimal output                                             |
+| `--verbose`            | Debug output                                               |
+| `--include-prerelease` | Include beta/demo/proto ROMs                               |
+| `--include-unlicensed` | Include unlicensed/pirate ROMs                             |
+
+`--jobs` now directly controls maximum concurrent file downloads (scaled by `--disk-profile` for in-flight byte limits). For multi-system runs, a small number of systems will download in parallel to keep the pipe full.
 
 ### Available Systems
 
-| Key | Source | Description |
-|-----|--------|-------------|
-| `FC_CART` | no-intro | Famicom (cartridge) |
-| `FC_FDS` | no-intro | Famicom Disk System |
-| `GB` | no-intro | Game Boy |
-| `GBA` | no-intro | Game Boy Advance |
-| `GBC` | no-intro | Game Boy Color |
-| `MD` | no-intro | Mega Drive / Genesis |
-| `PCE` | no-intro | PC Engine / TurboGrafx-16 |
-| `PKM` | no-intro | Pokemon Mini |
-| `SGB` | no-intro | Super Game Boy (SNES) |
-| `PS` | redump | PlayStation |
-| `MD_SEGA_CD` | redump | Mega CD / Sega CD |
+| Key          | Source   | Description               |
+| ------------ | -------- | ------------------------- |
+| `FC_CART`    | no-intro | Famicom (cartridge)       |
+| `FC_FDS`     | no-intro | Famicom Disk System       |
+| `GB`         | no-intro | Game Boy                  |
+| `GBA`        | no-intro | Game Boy Advance          |
+| `GBC`        | no-intro | Game Boy Color            |
+| `MD`         | no-intro | Mega Drive / Genesis      |
+| `PCE`        | no-intro | PC Engine / TurboGrafx-16 |
+| `PKM`        | no-intro | Pokemon Mini              |
+| `SGB`        | no-intro | Super Game Boy (SNES)     |
+| `PS`         | redump   | PlayStation               |
+| `MD_SEGA_CD` | redump   | Mega CD / Sega CD         |
 
 ## Configuration
 
@@ -75,11 +78,11 @@ Create `~/.brickrc` (JSON) for default settings:
 
 ```json
 {
-  "jobs": 8,
-  "defaultPreset": "english",
-  "defaultSources": ["no-intro"],
-  "includePrerelease": false,
-  "includeUnlicensed": false
+	"jobs": 8,
+	"defaultPreset": "english",
+	"defaultSources": ["no-intro"],
+	"includePrerelease": false,
+	"includeUnlicensed": false
 }
 ```
 

@@ -31,7 +31,7 @@ const USER_AGENT =
 export const HTTP_AGENT: Dispatcher = new Agent({
 	keepAliveTimeout: 10_000,
 	keepAliveMaxTimeout: 60_000,
-	connections: 16,
+	connections: 32,
 })
 
 export interface DownloadOptions {
