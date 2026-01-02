@@ -29,6 +29,7 @@ import {
 	getPresetFilter,
 	getExclusionFilter,
 	parseCustomFilter,
+	apply1G1R,
 } from "./filters.js"
 import {
 	BackpressureController,
@@ -39,6 +40,8 @@ import { ui } from "./ui.js"
 import { writeFileSync, readFileSync } from "node:fs"
 import { runParallel } from "./parallel.js"
 import { createProgressTracker } from "./progress.js"
+import { hashFile } from "./hash.js"
+import { generateMetadata, saveMetadata } from "./metadata.js"
 
 function resolveBackpressure(
 	profile: DiskProfile,
@@ -669,12 +672,18 @@ export async function downloadRomEntry(
 		{ regionFilter, exclusionFilter },
 	)
 
+	// Apply 1G1R if enabled (defaults to true for better library management)
+	const enable1G1R = (options as { enable1G1R?: boolean }).enable1G1R ?? true
+	const finalFilenames = enable1G1R
+		? apply1G1R(filteredFilenames)
+		: filteredFilenames
+
 	// Create a map for quick size lookup
 	const sizeMap = new Map(listing.map(e => [e.filename, e.size]))
 	const lastModifiedMap = new Map(
 		listing.map(e => [e.filename, e.lastModified]),
 	)
-	const filteredListing = filteredFilenames.map(filename => {
+	const filteredListing = finalFilenames.map(filename => {
 		const lastModified = lastModifiedMap.get(filename)
 		const out: FileEntry = { filename, size: sizeMap.get(filename) ?? 0 }
 		if (lastModified !== undefined) out.lastModified = lastModified
@@ -685,7 +694,10 @@ export async function downloadRomEntry(
 		sizeMap.get(filename) ?? 0
 
 	ui.debug(
-		`Listing: ${listing.length} files, after filter: ${filteredListing.length}`,
+		`Listing: ${listing.length} files, after filter: ${filteredListing.length}` +
+			(enable1G1R
+				? ` (1G1R applied, ${filteredFilenames.length - finalFilenames.length} duplicates removed)`
+				: ""),
 		options.verbose,
 	)
 
@@ -1035,6 +1047,52 @@ export async function downloadRomEntry(
 			`Extracted: ${extractedCount}, recovered via redownload: ${recoveredCount}, failed: ${extractFailed} (concurrency ${extractConcurrency})`,
 			options.verbose,
 		)
+
+		// Generate metadata for extracted ROMs if enabled
+		const generateMetadataOption =
+			(options as { generateMetadata?: boolean }).generateMetadata ?? true
+		const verifyHashesOption =
+			(options as { verifyHashes?: boolean }).verifyHashes ?? false
+
+		if (generateMetadataOption && extractedCount > 0) {
+			ui.info("Generating metadata...")
+			let metadataCount = 0
+
+			const extractedRoms = readdirSync(destDir).filter(f => {
+				const ext = f.substring(f.lastIndexOf(".")).toLowerCase()
+				return (
+					!f.endsWith(".json") &&
+					!f.startsWith(".") &&
+					!f.endsWith(".zip") &&
+					ext !== ".zip"
+				)
+			})
+
+			for (const romFilename of extractedRoms) {
+				const romPath = join(destDir, romFilename)
+
+				// Generate hash if verification is enabled
+				let hash: { sha1: string; crc32: string; size: number } | undefined
+				if (verifyHashesOption) {
+					try {
+						hash = await hashFile(romPath)
+					} catch {
+						// Skip hash on error
+					}
+				}
+
+				const metadata = generateMetadata(
+					romFilename,
+					entry.destDir,
+					entry.source,
+					hash,
+				)
+				saveMetadata(destDir, romFilename, metadata)
+				metadataCount++
+			}
+
+			ui.debug(`Generated metadata for ${metadataCount} ROMs`, options.verbose)
+		}
 	}
 
 	const downloaded = successFiles.length

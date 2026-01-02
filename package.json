@@ -1,61 +1,61 @@
 {
-  "name": "retrosd",
-  "version": "1.0.0",
-  "description": "Brick SD Card Creator - BIOS & ROM downloader for retro gaming consoles",
-  "keywords": [
-    "retro",
-    "gaming",
-    "roms",
-    "bios",
-    "retroarch"
-  ],
-  "license": "MIT",
-  "author": "",
-  "type": "module",
-  "main": "./dist/index.js",
-  "bin": {
-    "retrosd": "./dist/cli/index.js"
-  },
-  "scripts": {
-    "build-file": "esbuild --bundle --outdir=dist --platform=node --format=esm --packages=external",
-    "build": "npm run build-file -- ./src/cli/index.ts ./src/index.ts",
-    "cli": "npm run build && node ./dist/cli/index.js",
-    "dev": "concurrently --raw \"npm:dev:*\"",
-    "dev:build": "npm run build-file -- --watch=forever ./src/cli/index.ts",
-    "dev:run": "node --watch \"./dist/cli/index.js\"",
-    "format": "prettier --write .",
-    "lint": "eslint --ext .ts src",
-    "start": "npm run build && node ./dist/cli/index.js",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@types/cli-progress": "^3.11.6",
-    "@types/yauzl": "^2.10.3",
-    "chalk": "^5.6.2",
-    "cli-progress": "^3.12.0",
-    "commander": "^14.0.2",
-    "dotenv": "^17.2.3",
-    "ora": "^9.0.0",
-    "p-limit": "^7.2.0",
-    "prompts": "^2.4.2",
-    "undici": "^6.22.0",
-    "yauzl": "^3.2.0",
-    "zod": "^4.3.4"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "@tsconfig/node20": "^20.1.8",
-    "@types/node": "^25.0.3",
-    "@types/prompts": "^2.4.9",
-    "@typescript-eslint/eslint-plugin": "^8.51.0",
-    "@typescript-eslint/parser": "^8.51.0",
-    "concurrently": "^9.2.1",
-    "esbuild": "^0.27.2",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-prettier": "^5.5.4",
-    "prettier": "^3.7.4",
-    "typescript": "^5.9.3"
-  }
+	"name": "retrosd",
+	"version": "2.0.0",
+	"description": "Brick SD Card Creator - BIOS & ROM downloader for retro gaming consoles with DAT-style verification",
+	"keywords": [
+		"retro",
+		"gaming",
+		"roms",
+		"bios",
+		"retroarch"
+	],
+	"license": "MIT",
+	"author": "",
+	"type": "module",
+	"main": "./dist/index.js",
+	"bin": {
+		"retrosd": "./dist/cli/index.js"
+	},
+	"scripts": {
+		"build-file": "esbuild --bundle --outdir=dist --platform=node --format=esm --packages=external",
+		"build": "npm run build-file -- ./src/cli/index.ts ./src/index.ts",
+		"cli": "npm run build && node ./dist/cli/index.js",
+		"dev": "concurrently --raw \"npm:dev:*\"",
+		"dev:build": "npm run build-file -- --watch=forever ./src/cli/index.ts",
+		"dev:run": "node --watch \"./dist/cli/index.js\"",
+		"format": "prettier --write .",
+		"lint": "eslint --ext .ts src",
+		"start": "npm run build && node ./dist/cli/index.js",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@types/cli-progress": "^3.11.6",
+		"@types/yauzl": "^2.10.3",
+		"chalk": "^5.6.2",
+		"cli-progress": "^3.12.0",
+		"commander": "^14.0.2",
+		"dotenv": "^17.2.3",
+		"ora": "^9.0.0",
+		"p-limit": "^7.2.0",
+		"prompts": "^2.4.2",
+		"undici": "^6.22.0",
+		"yauzl": "^3.2.0",
+		"zod": "^4.3.4"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.39.2",
+		"@tsconfig/node20": "^20.1.8",
+		"@types/node": "^25.0.3",
+		"@types/prompts": "^2.4.9",
+		"@typescript-eslint/eslint-plugin": "^8.51.0",
+		"@typescript-eslint/parser": "^8.51.0",
+		"concurrently": "^9.2.1",
+		"esbuild": "^0.27.2",
+		"eslint": "^9.39.2",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-import": "^2.32.0",
+		"eslint-plugin-prettier": "^5.5.4",
+		"prettier": "^3.7.4",
+		"typescript": "^5.9.3"
+	}
 }

@@ -2,6 +2,7 @@
 /**
  * RetroSD CLI - Brick SD Card Creator
  * State-of-the-art BIOS & ROM downloader for retro gaming consoles
+ * Enhanced with DAT-style verification, metadata generation, and library management
  */
 
 import "../bootstrap.js"
@@ -25,6 +26,12 @@ import {
 	setupPromptHandlers,
 } from "../prompts.js"
 import { loadPreferences, updatePreferences } from "../preferences.js"
+import {
+	scanCollection,
+	verifyCollection,
+	exportManifest,
+} from "../collection.js"
+import { convertRomsInDirectory } from "../convert.js"
 import type {
 	Source,
 	RomEntry,
@@ -33,7 +40,7 @@ import type {
 	DiskProfile,
 } from "../types.js"
 
-const VERSION = "1.0.0"
+const VERSION = "2.0.0"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CLI Definition
@@ -71,7 +78,194 @@ program
 		"Disk speed profile: fast (SSD), balanced (HDD), slow (SD card/NAS)",
 		"balanced",
 	)
+	.option("--no-1g1r", "Disable 1G1R (one-game-one-ROM) filtering", false)
+	.option("--no-metadata", "Skip metadata generation", false)
+	.option("--verify-hashes", "Generate and verify SHA-1/CRC32 hashes", false)
+	.option("--convert-chd", "Convert disc images to CHD format", false)
 	.action(run)
+
+// Add scan command
+program
+	.command("scan")
+	.description("Scan and catalog installed ROMs")
+	.argument("<target>", "Path to SD card root directory")
+	.option("-q, --quiet", "Minimal output", false)
+	.option("--verbose", "Debug output", false)
+	.option("--hashes", "Compute SHA-1/CRC32 hashes (slower)", false)
+	.option("-o, --output <file>", "Export manifest to JSON file")
+	.action(async (target, options) => {
+		setupPromptHandlers()
+
+		if (!existsSync(target)) {
+			ui.error(`Directory does not exist: ${target}`)
+			process.exit(1)
+		}
+
+		const romsDir = join(target, "Roms")
+		const manifest = await scanCollection(romsDir, {
+			includeHashes: options.hashes,
+			verbose: options.verbose,
+			quiet: options.quiet,
+		})
+
+		if (options.output) {
+			exportManifest(manifest, options.output)
+			ui.success(`Manifest exported to ${options.output}`)
+		}
+	})
+
+// Add verify command
+program
+	.command("verify")
+	.description("Verify ROM integrity against stored hashes")
+	.argument("<target>", "Path to SD card root directory")
+	.option("-q, --quiet", "Minimal output", false)
+	.option("--verbose", "Debug output", false)
+	.action(async (target, options) => {
+		setupPromptHandlers()
+
+		if (!existsSync(target)) {
+			ui.error(`Directory does not exist: ${target}`)
+			process.exit(1)
+		}
+
+		const romsDir = join(target, "Roms")
+		const results = await verifyCollection(romsDir, options)
+
+		const invalid = results.filter(r => !r.valid)
+		if (invalid.length > 0) {
+			process.exit(1)
+		}
+	})
+
+// Add convert command
+program
+	.command("convert")
+	.description("Convert disc images to compressed formats (CHD)")
+	.argument("<target>", "Path to SD card root directory")
+	.option(
+		"--systems <list>",
+		"Comma-separated system keys (default: all disc-based)",
+	)
+	.option("--delete-originals", "Delete original files after conversion", false)
+	.option("-q, --quiet", "Minimal output", false)
+	.option("--verbose", "Debug output", false)
+	.action(async (target, options) => {
+		setupPromptHandlers()
+
+		if (!existsSync(target)) {
+			ui.error(`Directory does not exist: ${target}`)
+			process.exit(1)
+		}
+
+		const romsDir = join(target, "Roms")
+		const systems = options.systems ? options.systems.split(",") : ["PS", "MD"]
+
+		ui.header("Converting Disc Images")
+
+		let totalConverted = 0
+		let totalFailed = 0
+		let totalSkipped = 0
+
+		for (const system of systems) {
+			const systemDir = join(romsDir, system.trim())
+			if (!existsSync(systemDir)) {
+				ui.warn(`System directory not found: ${system}`)
+				continue
+			}
+
+			ui.info(`Converting ${system}...`)
+			const result = await convertRomsInDirectory(systemDir, {
+				deleteOriginals: options.deleteOriginals,
+				verbose: options.verbose,
+				quiet: options.quiet,
+			})
+
+			totalConverted += result.converted
+			totalFailed += result.failed
+			totalSkipped += result.skipped
+
+			if (!options.quiet) {
+				ui.success(
+					`${system}: ${result.converted} converted, ${result.skipped} skipped, ${result.failed} failed`,
+				)
+			}
+		}
+
+		ui.info(
+			`\nTotal: ${totalConverted} converted, ${totalSkipped} skipped, ${totalFailed} failed`,
+		)
+	})
+
+// Add export command
+program
+	.command("export")
+	.description("Export collection manifest for external tools")
+	.argument("<target>", "Path to SD card root directory")
+	.option("-o, --output <file>", "Output file path", "collection.json")
+	.option("--format <type>", "Export format: json, romm, es", "json")
+	.option("-q, --quiet", "Minimal output", false)
+	.option("--verbose", "Debug output", false)
+	.action(async (target, options) => {
+		setupPromptHandlers()
+
+		if (!existsSync(target)) {
+			ui.error(`Directory does not exist: ${target}`)
+			process.exit(1)
+		}
+
+		const romsDir = join(target, "Roms")
+		const manifest = await scanCollection(romsDir, {
+			includeHashes: true,
+			verbose: options.verbose,
+			quiet: options.quiet,
+		})
+
+		exportManifest(manifest, options.output)
+		ui.success(`Collection exported to ${options.output}`)
+	})
+
+// Add metadata command
+program
+	.command("metadata")
+	.description("Generate metadata files for existing ROMs")
+	.argument("<target>", "Path to SD card root directory")
+	.option("--systems <list>", "Comma-separated system keys (default: all)")
+	.option("--with-hashes", "Compute SHA-1/CRC32 hashes (slower)", false)
+	.option("--overwrite", "Overwrite existing metadata files", false)
+	.option("-q, --quiet", "Minimal output", false)
+	.option("--verbose", "Debug output", false)
+	.action(async (target, options) => {
+		setupPromptHandlers()
+
+		if (!existsSync(target)) {
+			ui.error(`Directory does not exist: ${target}`)
+			process.exit(1)
+		}
+
+		const romsDir = join(target, "Roms")
+		const { generateMetadataForExisting } = await import("../metadata.js")
+
+		const systems = options.systems
+			? options.systems.split(",").map((s: string) => s.trim())
+			: undefined
+
+		ui.header("Generating Metadata")
+
+		const result = await generateMetadataForExisting(romsDir, {
+			systems,
+			withHashes: options.withHashes,
+			overwrite: options.overwrite,
+			verbose: options.verbose,
+			quiet: options.quiet,
+		})
+
+		if (!options.quiet) {
+			ui.success(
+				`Generated ${result.created} metadata files, skipped ${result.skipped}, failed ${result.failed}`,
+			)
+		}
+	})
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Action
@@ -95,6 +289,11 @@ interface CliArgs {
 	includeUnlicensed: boolean
 	update: boolean
 	diskProfile: string
+	// New options
+	"1g1r": boolean // Note: commander converts --no-1g1r to false
+	metadata: boolean // Note: commander converts --no-metadata to false
+	verifyHashes: boolean
+	convertChd: boolean
 }
 
 async function run(
@@ -282,9 +481,37 @@ async function run(
 			includePrerelease,
 			includeUnlicensed,
 			diskProfile,
-		})
+			enable1G1R: options["1g1r"],
+			generateMetadata: options.metadata,
+			verifyHashes: options.verifyHashes,
+		} as Parameters<typeof downloadRoms>[2])
 
 		allRomResults.push(...romSummary.completed, ...romSummary.failed)
+
+		// Convert to CHD if requested
+		if (options.convertChd && !dryRun) {
+			ui.header("Converting Disc Images")
+
+			const discSystems = selectedEntries
+				.filter(e => e.key === "PS" || e.key === "MD_SEGA_CD")
+				.map(e => e.destDir)
+
+			for (const system of discSystems) {
+				const systemDir = join(romsDir, system)
+				if (existsSync(systemDir)) {
+					ui.info(`Converting ${system} to CHD...`)
+					const result = await convertRomsInDirectory(systemDir, {
+						deleteOriginals: true,
+						verbose,
+						quiet,
+					})
+
+					ui.info(
+						`${system}: ${result.converted} converted, ${result.skipped} skipped, ${result.failed} failed`,
+					)
+				}
+			}
+		}
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────────

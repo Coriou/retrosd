@@ -119,4 +119,53 @@ export interface CliOptions {
 	includeUnlicensed: boolean
 	update: boolean
 	diskProfile?: DiskProfile
+	// New options for library management
+	enable1G1R?: boolean
+	generateMetadata?: boolean
+	verifyHashes?: boolean
+	convertFormats?: boolean
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Collection Management
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CollectionManifest {
+	version: number
+	generatedAt: string
+	systems: SystemCollection[]
+	stats: CollectionStats
+}
+
+export interface SystemCollection {
+	system: string
+	source: Source
+	romCount: number
+	totalSize: number
+	roms: RomInfo[]
+}
+
+export interface RomInfo {
+	filename: string
+	title: string
+	region: string[]
+	size: number
+	sha1?: string | undefined
+	crc32?: string | undefined
+	hasMetadata: boolean
+	path: string
+}
+
+export interface CollectionStats {
+	totalRoms: number
+	totalSize: number
+	systemCount: number
+	biosCount: number
+}
+
+export interface VerifyResult {
+	filename: string
+	path: string
+	valid: boolean
+	issues: string[]
 }
