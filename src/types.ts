@@ -10,6 +10,14 @@ export type Source = 'no-intro' | 'redump'
 
 export type RegionPreset = 'usa' | 'english' | 'ntsc' | 'pal' | 'japanese' | 'all'
 
+/**
+ * Disk performance profiles for backpressure tuning
+ * - fast: Local NVMe/SSD - high concurrency, large buffer
+ * - balanced: USB HDD - moderate settings (default)
+ * - slow: SD card, NAS, slow USB - conservative to prevent memory overflow
+ */
+export type DiskProfile = 'fast' | 'balanced' | 'slow'
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ROM Entries
 // ─────────────────────────────────────────────────────────────────────────────
@@ -103,4 +111,5 @@ export interface CliOptions {
   verbose: boolean
   includePrerelease: boolean
   includeUnlicensed: boolean
+  diskProfile?: DiskProfile
 }

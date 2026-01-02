@@ -2,7 +2,13 @@
   "name": "retrosd",
   "version": "1.0.0",
   "description": "Brick SD Card Creator - BIOS & ROM downloader for retro gaming consoles",
-  "keywords": ["retro", "gaming", "roms", "bios", "retroarch"],
+  "keywords": [
+    "retro",
+    "gaming",
+    "roms",
+    "bios",
+    "retroarch"
+  ],
   "license": "MIT",
   "author": "",
   "type": "module",
@@ -23,12 +29,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@types/yauzl": "^2.10.3",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
     "dotenv": "^17.2.3",
     "ora": "^9.0.0",
     "p-limit": "^7.2.0",
     "prompts": "^2.4.2",
+    "yauzl": "^3.2.0",
     "zod": "^4.3.4"
   },
   "devDependencies": {

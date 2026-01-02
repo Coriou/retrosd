@@ -20,7 +20,7 @@ import {
   promptFilter,
   setupPromptHandlers,
 } from '../prompts.js'
-import type { Source, RomEntry, RegionPreset, DownloadResult } from '../types.js'
+import type { Source, RomEntry, RegionPreset, DownloadResult, DiskProfile } from '../types.js'
 
 const VERSION = '1.0.0'
 
@@ -49,6 +49,11 @@ program
   .option('--verbose', 'Debug output', false)
   .option('--include-prerelease', 'Include beta/demo/proto ROMs', false)
   .option('--include-unlicensed', 'Include unlicensed/pirate ROMs', false)
+  .option(
+    '--disk-profile <profile>',
+    'Disk speed profile: fast (SSD), balanced (HDD), slow (SD card/NAS)',
+    'balanced'
+  )
   .action(run)
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,6 +76,7 @@ interface CliArgs {
   verbose: boolean
   includePrerelease: boolean
   includeUnlicensed: boolean
+  diskProfile: string
 }
 
 async function run(target: string, options: Omit<CliArgs, 'target'>): Promise<void> {
@@ -91,6 +97,12 @@ async function run(target: string, options: Omit<CliArgs, 'target'>): Promise<vo
   const includePrerelease = options.includePrerelease ?? config.includePrerelease
   const includeUnlicensed = options.includeUnlicensed ?? config.includeUnlicensed
 
+  // Validate disk profile
+  const validProfiles = ['fast', 'balanced', 'slow'] as const
+  const diskProfile = validProfiles.includes(options.diskProfile as typeof validProfiles[number])
+    ? (options.diskProfile as DiskProfile)
+    : 'balanced'
+
   // Validate target directory
   if (!existsSync(target)) {
     ui.error(`Directory does not exist: ${target}`)
@@ -106,7 +118,7 @@ async function run(target: string, options: Omit<CliArgs, 'target'>): Promise<vo
     ui.dryRunBanner()
   }
 
-  ui.banner(VERSION, target, jobs, options.filter ?? options.preset)
+  ui.banner(VERSION, target, jobs, options.filter ?? options.preset, diskProfile)
 
   // Create directories
   await createRomDirectories(romsDir)
@@ -198,6 +210,7 @@ async function run(target: string, options: Omit<CliArgs, 'target'>): Promise<vo
       ...(filter !== undefined ? { filter } : {}),
       includePrerelease,
       includeUnlicensed,
+      diskProfile,
     })
 
     allRomResults.push(...romSummary.completed, ...romSummary.failed)

@@ -38,10 +38,19 @@ export const ui = {
   },
 
   /** Banner for startup */
-  banner(version: string, target: string, jobs: number, filter?: string): void {
+  banner(version: string, target: string, jobs: number, filter?: string, diskProfile?: string): void {
     console.log(chalk.bold('Brick SD Card Creator') + ` v${version}`)
     console.log(`Target: ${chalk.cyan(target)}`)
     console.log(`Jobs: ${chalk.cyan(String(jobs))} parallel downloads`)
+    if (diskProfile) {
+      const profileDesc =
+        diskProfile === 'fast'
+          ? 'fast (SSD/NVMe)'
+          : diskProfile === 'slow'
+            ? 'slow (SD card/NAS)'
+            : 'balanced (HDD/USB)'
+      console.log(`Disk profile: ${chalk.cyan(profileDesc)}`)
+    }
     if (filter) {
       console.log(`Filter: ${chalk.cyan(filter)}`)
     }
