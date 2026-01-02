@@ -1,6 +1,6 @@
-# RetroSD - Because I was gifted a retro-emulator console for Christmas
+# RetroSD
 
-A comprehensive **ROM library manager** with DAT-style verification, metadata generation, and smart filtering.
+A comprehensive **ROM library manager** with DAT-style verification, metadata generation, and smart filtering. Because I was gifted a retro-emulator console for Christmas.
 
 ## Features
 
