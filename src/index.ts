@@ -10,6 +10,17 @@ export * from "./bios.js"
 export * from "./roms.js"
 export * from "./hash.js"
 export * from "./metadata.js"
+export * from "./backpressure.js"
+export * from "./extract.js"
+export {
+	HTTP_AGENT,
+	anyExtensionExists,
+	downloadFile,
+	fileExists,
+	type DownloadOptions as FileDownloadOptions,
+	type DownloadResult as FileDownloadResult,
+} from "./download.js"
 export * from "./collection.js"
 export * from "./convert.js"
 export * from "./filters.js"
+export * from "./scrape.js"

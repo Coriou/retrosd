@@ -267,6 +267,180 @@ program
 		}
 	})
 
+// Add scrape command
+program
+	.command("scrape")
+	.description("Download artwork from ScreenScraper for EmulationStation")
+	.argument("<target>", "Path to SD card root directory")
+	.option("--systems <list>", "Comma-separated system keys (default: all)")
+	.option("--username <user>", "ScreenScraper username (for higher limits)")
+	.option("--password <pass>", "ScreenScraper password")
+	.option(
+		"--dev-id <id>",
+		"ScreenScraper developer ID (or SCREENSCRAPER_DEV_ID)",
+		"",
+	)
+	.option(
+		"--dev-password <pass>",
+		"ScreenScraper developer password (or SCREENSCRAPER_DEV_PASSWORD)",
+		"",
+	)
+	.option("--no-box", "Skip box art")
+	.option("--screenshot", "Download screenshots", false)
+	.option("--video", "Download videos (slow, large files)", false)
+	.option("--overwrite", "Re-download existing media", false)
+	.option(
+		"-j, --jobs <n>",
+		"Concurrent scrapes (auto-detected from account, or specify manually)",
+		"",
+	)
+	.option(
+		"--download-jobs <n>",
+		"Concurrent media downloads (default: 2x lookup threads, max 16)",
+		"",
+	)
+	.option("--include-unknown", "Include ROMs with unknown extensions", false)
+	.option("-q, --quiet", "Minimal output", false)
+	.option("--verbose", "Debug output", false)
+	.action(async (target, options) => {
+		setupPromptHandlers()
+
+		if (!existsSync(target)) {
+			ui.error(`Directory does not exist: ${target}`)
+			process.exit(1)
+		}
+
+		const romsDir = join(target, "Roms")
+		const { scrapeSystem, generateGamelist } = await import("../scrape.js")
+		const { writeFileSync } = await import("node:fs")
+
+		const systems = options.systems
+			? options.systems.split(",").map((s: string) => s.trim())
+			: ["GB", "GBA", "GBC", "FC", "MD", "PS"]
+
+		ui.header("Scraping Artwork from ScreenScraper")
+		ui.info(`Media will be saved to: ${romsDir}/<system>/media/`)
+
+		const devId = String(
+			options.devId || process.env["SCREENSCRAPER_DEV_ID"] || "",
+		).trim()
+		const devPassword = String(
+			options.devPassword || process.env["SCREENSCRAPER_DEV_PASSWORD"] || "",
+		).trim()
+		const hasDevCreds = Boolean(devId && devPassword)
+		if (!hasDevCreds && !options.quiet) {
+			ui.warn(
+				"ScreenScraper developer credentials not set. Lookups may fail without --dev-id/--dev-password or SCREENSCRAPER_DEV_ID/SCREENSCRAPER_DEV_PASSWORD.",
+			)
+		}
+
+		// Determine thread count based on authentication
+		let maxThreads = 1 // Default for anonymous
+		let maxThreadsKnown = false
+		if (options.username && options.password) {
+			// Try to validate credentials to get exact thread count
+			// But don't fail if validation endpoint requires special dev credentials
+			const { validateCredentials } = await import("../scrape.js")
+			const validation = await validateCredentials(
+				options.username,
+				options.password,
+				hasDevCreds ? devId : undefined,
+				hasDevCreds ? devPassword : undefined,
+			)
+			if (validation.valid && validation.maxThreads) {
+				maxThreads = validation.maxThreads
+				maxThreadsKnown = true
+				ui.info(
+					`✓ Authenticated as: ${options.username} (${maxThreads} threads allowed)`,
+				)
+			} else {
+				// Validation failed, but user provided credentials so assume they're valid
+				// Use conservative estimate for authenticated users
+				maxThreads = 2 // Most registered users get at least 2-4 threads
+				ui.info(
+					`✓ Using account: ${options.username} (assuming ${maxThreads} threads)`,
+				)
+				if (!options.quiet) {
+					ui.info(
+						`  Note: Couldn't verify thread count (validation requires dev credentials)`,
+					)
+				}
+			}
+			console.log()
+		} else {
+			ui.warn(
+				"Tip: Register at screenscraper.fr and use --username/--password for faster scraping",
+			)
+			console.log()
+		}
+
+		// Set concurrency based on user's thread limit
+		const requestedJobs = parseInt(options.jobs, 10)
+		const requestedConcurrency =
+			Number.isFinite(requestedJobs) && requestedJobs > 0
+				? Math.min(requestedJobs, 16)
+				: undefined
+		const concurrency = requestedConcurrency
+			? maxThreadsKnown
+				? Math.min(requestedConcurrency, maxThreads)
+				: requestedConcurrency
+			: maxThreads
+
+		const requestedDownloadJobs = parseInt(options.downloadJobs, 10)
+		// Cap download concurrency to thread count to avoid exceeding ScreenScraper limits
+		const downloadConcurrency =
+			Number.isFinite(requestedDownloadJobs) && requestedDownloadJobs > 0
+				? Math.min(requestedDownloadJobs, concurrency)
+				: concurrency
+
+		let totalSuccess = 0
+		let totalFailed = 0
+		let totalSkipped = 0
+
+		for (const system of systems) {
+			const systemDir = join(romsDir, system.trim())
+			if (!existsSync(systemDir)) {
+				ui.warn(`System directory not found: ${system}`)
+				continue
+			}
+
+			const result = await scrapeSystem(systemDir, system, {
+				boxArt: options.box,
+				screenshot: options.screenshot,
+				video: options.video,
+				username: options.username,
+				password: options.password,
+				...(hasDevCreds ? { devId, devPassword } : {}),
+				verbose: options.verbose,
+				quiet: options.quiet,
+				concurrency,
+				downloadConcurrency,
+				overwrite: options.overwrite,
+				includeUnknown: options.includeUnknown,
+			})
+
+			totalSuccess += result.success
+			totalFailed += result.failed
+			totalSkipped += result.skipped
+
+			// Generate gamelist.xml
+			if (result.success > 0) {
+				const gamelist = generateGamelist(systemDir, system)
+				writeFileSync(join(systemDir, "gamelist.xml"), gamelist, "utf8")
+				if (!options.quiet) {
+					ui.success(`Generated gamelist.xml for ${system}`)
+				}
+			}
+		}
+
+		if (!options.quiet) {
+			console.log()
+			ui.info(
+				`Total: ${totalSuccess} scraped, ${totalSkipped} skipped, ${totalFailed} failed`,
+			)
+		}
+	})
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Action
 // ─────────────────────────────────────────────────────────────────────────────

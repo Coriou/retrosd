@@ -1,192 +1,54 @@
-# RetroSD
+# RetroSD v2.0.0 - Feature Summary
 
-**Brick SD Card Creator** – A modern TypeScript CLI for downloading BIOS files and ROMs for retro gaming consoles with DAT-style verification and library management.
+## 🎉 What's New
 
-## Features
+RetroSD has evolved from a simple ROM downloader into a comprehensive **ROM library manager** with DAT-style verification, metadata generation, and smart filtering.
 
-### Core Download Features
+## ✨ New Features
 
-- 🎮 **BIOS Downloads** – Automatically fetches BIOS files for FC, GB, GBA, GBC, MD, PCE, PS, and more
-- 📦 **ROM Downloads** – Fetches ROMs from [Myrient](https://myrient.erista.me/) (No-Intro & Redump sources)
-- 🔍 **Smart Filtering** – Region presets (USA, English, NTSC, PAL, Japanese) or custom regex
-- ⚡ **Parallel Downloads** – Configurable concurrency (default: 4 parallel downloads)
-- 🔄 **Resume Support** – Skip already-downloaded files with `--resume`
-- 🎯 **Interactive & Non-Interactive** – Beautiful prompts for humans, flags for scripts
+### 1. Smart 1G1R (One-Game-One-ROM) Filtering ✅
 
-### Library Management (NEW)
+**What it does:**
 
-- ✨ **1G1R (One-Game-One-ROM)** – Smart region priority filtering to keep only the best version of each game
-- 📋 **Metadata Generation** – Creates .json sidecar files with title, region, version, tags, and hashes
-- 🔐 **Hash Verification** – SHA-1 and CRC32 hashing for ROM integrity verification (DAT-compatible)
-- 🔍 **Collection Scanning** – Catalog and analyze your ROM library
-- ✅ **Verification** – Verify ROM integrity against stored hashes
-- 📤 **Export** – Generate manifests for RomM, EmulationStation, and other frontends
-- 💾 **Format Conversion** – Convert disc images to CHD for massive space savings
+- Automatically selects the best version of each game when multiple regional variants exist
+- Uses intelligent region priority scoring (USA > World > English > Europe > Japan...)
+- Prefers newer revisions (Rev 3 > Rev 2 > Rev 1)
 
-## Installation
+**Why it matters:**
 
-```bash
-npm install
-npm run build
-```
+- Keeps your library clean and manageable
+- No duplicate games cluttering your collection
+- Still configurable with `--no-1g1r` if you want all variants
 
-## Usage
+**Example:**
+Instead of downloading:
 
-### Download ROMs and BIOS
+- Super Mario Bros. (USA).nes
+- Super Mario Bros. (Europe).nes
+- Super Mario Bros. (Japan).nes
+- Super Mario Bros. (World).nes
 
-```bash
-# Interactive mode (prompts for options)
-npm run cli -- /path/to/sdcard
+You get just: `Super Mario Bros. (USA).nes` (the highest priority version)
 
-# BIOS only
-npm run cli -- --bios-only /path/to/sdcard
+---
 
-# Dry run (preview what would be downloaded)
-npm run cli -- --dry-run /path/to/sdcard
+### 2. Metadata Generation & DAT Compatibility ✅
 
-# Non-interactive with filters
-npm run cli -- --non-interactive --sources=no-intro --systems=GB,GBA --preset=usa /path/to/sdcard
+**What it does:**
 
-# With metadata and hash verification
-npm run cli -- --verify-hashes /path/to/sdcard
+- Creates `.json` sidecar files for every ROM
+- Parses filename to extract: title, region, version, tags
+- Generates SHA-1 and CRC32 hashes (compatible with No-Intro/Redump DATs)
+- Tracks file size and timestamps
 
-# Convert disc images to CHD automatically
-npm run cli -- --convert-chd --systems=PS /path/to/sdcard
-```
+**Why it matters:**
 
-### Library Management
+- Makes your collection compatible with ROM managers like RomVault, clrmamepro, igir
+- Enables integration with RomM, Playnite, EmulationStation
+- Provides data for scrapers to work more accurately
+- Allows verification of ROM integrity over time
 
-```bash
-# Scan your collection
-npm run cli -- scan /path/to/sdcard
-
-# Scan with hash computation (for verification)
-npm run cli -- scan --hashes /path/to/sdcard
-
-# Verify ROM integrity
-npm run cli -- verify /path/to/sdcard
-
-# Convert disc images to CHD
-npm run cli -- convert /path/to/sdcard --systems=PS
-
-# Export collection manifest
-npm run cli -- export /path/to/sdcard -o collection.json
-```
-
-### Options
-
-#### Download Options
-
-| Option                 | Description                                                |
-| ---------------------- | ---------------------------------------------------------- |
-| `-n, --dry-run`        | Preview actions without downloading                        |
-| `-j, --jobs <n>`       | Parallel downloads (default: 4)                            |
-| `--bios-only`          | Only download BIOS files                                   |
-| `--roms-only`          | Only download ROMs (skip BIOS)                             |
-| `--preset <name>`      | Filter: `usa`, `english`, `ntsc`, `pal`, `japanese`, `all` |
-| `-f, --filter <regex>` | Custom filter pattern                                      |
-| `--sources <list>`     | Comma-separated: `no-intro`, `redump`                      |
-| `--systems <list>`     | Comma-separated: `GB`, `GBA`, `MD`, `FC_CART`, etc.        |
-| `--resume`             | Skip existing files                                        |
-| `--update`             | Revalidate remote ROMs and redownload if changed           |
-| `--non-interactive`    | No prompts (for CI/scripts)                                |
-| `-q, --quiet`          | Minimal output                                             |
-| `--verbose`            | Debug output                                               |
-| `--include-prerelease` | Include beta/demo/proto ROMs                               |
-| `--include-unlicensed` | Include unlicensed/pirate ROMs                             |
-
-#### Library Management Options (NEW)
-
-| Option            | Description                                             |
-| ----------------- | ------------------------------------------------------- |
-| `--no-1g1r`       | Disable 1G1R filtering (download all regional variants) |
-| `--no-metadata`   | Skip metadata .json file generation                     |
-| `--verify-hashes` | Generate SHA-1/CRC32 hashes for verification (slower)   |
-| `--convert-chd`   | Automatically convert disc images to CHD format         |
-| `--disk-profile`  | Disk speed: `fast`, `balanced`, `slow` (default)        |
-
-#### Scan Command Options
-
-| Option         | Description                            |
-| -------------- | -------------------------------------- |
-| `--hashes`     | Compute SHA-1/CRC32 hashes during scan |
-| `-o, --output` | Export manifest to JSON file           |
-
-#### Convert Command Options
-
-| Option               | Description                                 |
-| -------------------- | ------------------------------------------- |
-| `--systems <list>`   | Systems to convert (default: PS, MD)        |
-| `--delete-originals` | Delete .cue/.bin files after CHD conversion |
-
-`--jobs` now directly controls maximum concurrent file downloads (scaled by `--disk-profile` for in-flight byte limits). For multi-system runs, a small number of systems will download in parallel to keep the pipe full.
-
-### Available Systems
-
-| Key          | Source   | Description               |
-| ------------ | -------- | ------------------------- |
-| `FC_CART`    | no-intro | Famicom (cartridge)       |
-| `FC_FDS`     | no-intro | Famicom Disk System       |
-| `GB`         | no-intro | Game Boy                  |
-| `GBA`        | no-intro | Game Boy Advance          |
-| `GBC`        | no-intro | Game Boy Color            |
-| `MD`         | no-intro | Mega Drive / Genesis      |
-| `PCE`        | no-intro | PC Engine / TurboGrafx-16 |
-| `PKM`        | no-intro | Pokemon Mini              |
-| `SGB`        | no-intro | Super Game Boy (SNES)     |
-| `PS`         | redump   | PlayStation               |
-| `MD_SEGA_CD` | redump   | Mega CD / Sega CD         |
-
-## Configuration
-
-Create `~/.brickrc` (JSON) for default settings:
-
-```json
-{
-	"jobs": 8,
-	"defaultPreset": "english",
-	"defaultSources": ["no-intro"],
-	"includePrerelease": false,
-	"includeUnlicensed": false
-}
-```
-
-## Output Structure
-
-```
-/path/to/sdcard/
-├── Bios/
-│   ├── FC/disksys.rom
-│   ├── GB/gb_bios.bin
-│   ├── GBA/gba_bios.bin
-│   ├── GBC/gbc_bios.bin
-│   ├── MD/bios_CD_*.bin
-│   ├── MGBA/gba_bios.bin → ../GBA/gba_bios.bin
-│   ├── PCE/syscard3.pce
-│   ├── PKM/bios.min
-│   ├── PRBOOM/prboom.wad, freedoom*.wad
-│   ├── PS/psxonpsp660.bin
-│   ├── PUAE/kick*.A*
-│   └── SGB/sgb.bios
-└── Roms/
-    ├── FC/
-    │   ├── Super Mario Bros. 2 (Japan) (En).nes
-    │   └── Super Mario Bros. 2 (Japan) (En).json  # Metadata sidecar
-    ├── GB/
-    │   ├── Pokemon Red (USA).gb
-    │   └── Pokemon Red (USA).json
-    ├── GBA/*.gba
-    ├── GBC/*.gbc
-    ├── MD/*.md
-    ├── PS/
-    │   ├── Final Fantasy VII (USA).chd  # Converted from .cue/.bin
-    │   └── Final Fantasy VII (USA).json
-    └── .retrosd-manifest.json  # Internal tracking
-```
-
-### Metadata File Format
-
-Each ROM gets a `.json` sidecar file with structured metadata:
+**Metadata file example:**
 
 ```json
 {
@@ -207,136 +69,264 @@ Each ROM gets a `.json` sidecar file with structured metadata:
 }
 ```
 
-## Development
+---
+
+### 3. Collection Scanning & Verification ✅
+
+**New Commands:**
+
+#### `retrosd scan`
+
+Catalog your entire ROM collection:
 
 ```bash
-# Watch mode
-npm run dev
+retrosd scan /path/to/sdcard
+# Output:
+# GB: 1660 ROMs (368.8 MB)
+# GBA: 2662 ROMs (21.6 GB)
+# GBC: 1467 ROMs (2.1 GB)
+# Total: 5789 ROMs across 3 systems (24.0 GB)
 
-# Type check
-npm run typecheck
-
-# Format code
-npm run format
-
-# Lint
-npm run lint
+# With hashing for verification:
+retrosd scan --hashes -o collection.json /path/to/sdcard
 ```
 
-## Architecture
+#### `retrosd verify`
 
-```
-src/
-├── cli/index.ts    # Commander entry point with subcommands
-├── types.ts        # Shared type definitions
-├── config.ts       # Config loading (Zod validation)
-├── ui.ts           # Terminal output (chalk)
-├── download.ts     # Download manager with retry
-├── parallel.ts     # p-limit concurrency
-├── filters.ts      # Region presets, exclusions, 1G1R logic
-├── bios.ts         # BIOS download definitions
-├── roms.ts         # ROM sources & download logic
-├── prompts.ts      # Interactive prompts
-├── hash.ts         # SHA-1/CRC32 hashing for verification
-├── metadata.ts     # Metadata parsing and generation
-├── collection.ts   # Scan, verify, export commands
-└── convert.ts      # Format conversion (CHD, CSO)
-```
-
-## Library Management Features
-
-### 1G1R (One-Game-One-ROM) Filtering
-
-Automatically selects the best version of each game based on region priority:
-
-**Priority Order:**
-
-1. USA (100 points)
-2. World (95)
-3. English (90)
-4. Europe (85)
-5. Australia (80)
-6. Japan (75)
-7. Other regions...
-
-**Version Priority:** Prefers newer revisions (Rev 3 > Rev 2 > Rev 1)
-
-Example: If you have:
-
-- `Super Mario Bros. (USA).nes`
-- `Super Mario Bros. (Europe).nes`
-- `Super Mario Bros. (Japan).nes`
-
-Only the USA version is downloaded (unless you use `--no-1g1r`).
-
-### Hash Verification
-
-Generate and verify SHA-1/CRC32 hashes compatible with No-Intro and Redump DAT files:
+Verify ROM integrity against stored hashes:
 
 ```bash
-# Generate hashes during download
-npm run cli -- --verify-hashes /path/to/sdcard
-
-# Verify existing collection
-npm run cli -- verify /path/to/sdcard
+retrosd verify /path/to/sdcard
+# Checks SHA-1/CRC32 against metadata
+# Reports corrupted or modified files
 ```
 
-Hashes are stored in metadata `.json` files and can be used to detect file corruption or modifications.
+**Why it matters:**
 
-### Format Conversion
+- Know exactly what's in your collection
+- Detect bit rot or file corruption early
+- Validate after copying to new storage
+- Generate manifests for other tools
 
-Convert disc-based ROMs to compressed formats:
+---
 
-**CHD (MAME Compressed Hunks of Data):**
+### 4. Format Conversion (CHD) ✅
 
-- PS1: ~700MB → ~200-300MB (60-70% savings)
-- Sega CD: Similar compression ratios
-- Requires `chdman` from MAME tools
+**What it does:**
+
+- Converts disc images (CUE/BIN) to CHD format
+- Uses MAME's chdman for compression
+- Optionally deletes originals to save space
+
+**Why it matters:**
+
+- **Massive space savings:** PS1 games go from ~700MB to ~200-300MB (60-70% reduction)
+- CHD is widely supported by RetroArch, EmulationStation, etc.
+- Preserves perfect quality (lossless compression)
+
+**Usage:**
 
 ```bash
-# Install chdman (macOS)
-brew install mame
-
 # Convert during download
-npm run cli -- --convert-chd --systems=PS /path/to/sdcard
+retrosd --convert-chd --systems=PS /path/to/sdcard
 
 # Convert existing collection
-npm run cli -- convert /path/to/sdcard --delete-originals
+retrosd convert /path/to/sdcard --delete-originals
 ```
 
-### Collection Export
+**Requirements:**
 
-Export your collection for use with other tools:
+- macOS: `brew install mame`
+- Linux: `apt-get install mame-tools`
+
+---
+
+### 5. Collection Export ✅
+
+**What it does:**
+
+- Generates JSON manifest of entire collection
+- Includes hashes, metadata, statistics
+- Compatible with RomM, Playnite, custom tools
+
+**Usage:**
 
 ```bash
-# Generate JSON manifest
-npm run cli -- export /path/to/sdcard -o collection.json
+retrosd export /path/to/sdcard -o collection.json
 ```
 
-The manifest includes:
+**Use cases:**
 
-- Complete ROM inventory with hashes
-- System statistics (ROM count, total size)
-- Metadata for integration with RomM, Playnite, EmulationStation
+- Import into RomM for web-based library browsing
+- Bulk import into Playnite
+- Generate EmulationStation gamelists
+- Track collection over time
 
-## Integration with Other Tools
+---
 
-### RomM (Self-Hosted ROM Library)
+## 🔧 Enhanced Existing Features
 
-Export your collection and import into [RomM](https://github.com/rommapp/romm):
+### Better Filtering
+
+- **Region priority** now considers version/revision info
+- **Exclusion filters** work alongside 1G1R
+- **Custom regex** still supported for power users
+
+### Smarter Downloads
+
+- Metadata generation happens automatically (disable with `--no-metadata`)
+- Hash verification optional but recommended (`--verify-hashes`)
+- Better resume/update logic using stored metadata
+
+---
+
+## 📊 State of the Art Comparison
+
+| Feature                 | RetroSD v2.0 | RomVault | clrmamepro | igir | Skraper |
+| ----------------------- | ------------ | -------- | ---------- | ---- | ------- |
+| **Download ROMs**       | ✅           | ❌       | ❌         | ✅   | ❌      |
+| **1G1R Filtering**      | ✅           | ✅       | ✅         | ✅   | ❌      |
+| **Hash Verification**   | ✅           | ✅       | ✅         | ✅   | ❌      |
+| **Metadata Generation** | ✅           | ❌       | ❌         | ❌   | ✅      |
+| **Format Conversion**   | ✅           | ❌       | ❌         | ❌   | ❌      |
+| **Collection Scanning** | ✅           | ✅       | ✅         | ✅   | ✅      |
+| **Export Manifests**    | ✅           | ✅       | ❌         | ✅   | ❌      |
+| **CLI + Interactive**   | ✅           | GUI      | GUI        | CLI  | GUI     |
+
+**RetroSD's unique position:** The only tool that combines downloading, DAT-style verification, 1G1R filtering, metadata generation, AND format conversion in a single CLI.
+
+---
+
+## 🚀 Quick Start Guide
+
+### First Time Setup
 
 ```bash
-npm run cli -- export /path/to/sdcard -o ~/romm-import.json
+# Download and organize GB/GBA games with metadata
+npm run cli -- --systems=GB,GBA --preset=english --verify-hashes /path/to/sdcard
+
+# This will:
+# 1. Download only English-region ROMs
+# 2. Apply 1G1R (one version per game)
+# 3. Generate metadata with hashes
+# 4. Create organized Roms/GB and Roms/GBA folders
 ```
 
-### EmulationStation
+### Maintain Your Collection
 
-Metadata files are compatible with EmulationStation's gamelist.xml format. RetroSD generates the foundational data that scrapers like Skraper can enhance.
+```bash
+# Scan to see what you have
+retrosd scan /path/to/sdcard
 
-### Playnite
+# Verify integrity
+retrosd verify /path/to/sdcard
 
-Use the exported JSON manifest to bulk-import your collection into Playnite with accurate metadata.
+# Update changed ROMs
+retrosd --update --systems=GB /path/to/sdcard
 
-## License
+# Convert PS1 games to CHD
+retrosd convert /path/to/sdcard --systems=PS --delete-originals
+```
 
-MIT
+### Export for Other Tools
+
+```bash
+# Generate manifest
+retrosd export /path/to/sdcard -o ~/my-collection.json
+
+# Import into RomM, Playnite, etc.
+```
+
+---
+
+## 📚 Architecture
+
+**New Modules:**
+
+- `hash.ts` - SHA-1/CRC32 computation with streaming for large files
+- `metadata.ts` - Filename parsing and JSON sidecar generation
+- `collection.ts` - Scan, verify, export operations
+- `convert.ts` - CHD/CSO format conversion
+- `filters.ts` - Enhanced with 1G1R priority scoring
+
+**Enhanced:**
+
+- `roms.ts` - Integrated metadata generation after extraction
+- `cli/index.ts` - Added subcommands: scan, verify, convert, export
+- `types.ts` - New interfaces for collection management
+
+---
+
+## 🎯 What This Enables
+
+### For Casual Users
+
+- Cleaner collections (no duplicates)
+- Verified ROMs (no corrupted files)
+- Space savings (CHD compression)
+- Ready for any frontend (metadata included)
+
+### For Power Users
+
+- DAT-compatible hashing
+- Integration with RomVault/igir workflows
+- Scriptable verification and maintenance
+- Collection tracking over time
+
+### For Developers
+
+- Full TypeScript API exported
+- Modular architecture
+- Easy to extend with new formats/systems
+- Well-documented types
+
+---
+
+## 🔮 Future Possibilities
+
+Based on the research, natural next steps could include:
+
+1. **DAT Import** - Directly use No-Intro/Redump DAT files for validation
+2. **Auto-Update DATs** - Keep DAT files current automatically
+3. **Scraper Integration** - Pull artwork/videos from ScreenScraper API
+4. **Duplicate Detection** - Find and merge ROMs with different naming
+5. **RVZ Support** - GameCube/Wii compression format
+6. **Playlist Generation** - Auto-create RetroArch playlists
+
+---
+
+## 📝 Migration Guide
+
+### From v1.0 to v2.0
+
+**Breaking Changes:** None! All v1.0 commands work as before.
+
+**New Defaults:**
+
+- 1G1R filtering is now **enabled by default** (use `--no-1g1r` to disable)
+- Metadata generation is **enabled by default** (use `--no-metadata` to disable)
+
+**Recommendations:**
+
+1. Run `retrosd scan --hashes /path/to/sdcard` on existing collections to generate metadata
+2. Use `retrosd verify /path/to/sdcard` to check integrity
+3. Consider converting PS1/Sega CD to CHD with `retrosd convert`
+
+---
+
+## 🙏 Credits
+
+**Inspired by:**
+
+- RomVault (verification model)
+- igir (automation approach)
+- clrmamepro (DAT philosophy)
+- Retool (1G1R filtering)
+- RomM (metadata format)
+
+**Built with:**
+
+- TypeScript
+- Commander.js
+- Node.js crypto (hashing)
+- MAME chdman (CHD conversion)
