@@ -50,7 +50,7 @@ export const ui = {
 		filter?: string,
 		diskProfile?: string,
 	): void {
-		console.log(chalk.bold("Brick SD Card Creator") + ` v${version}`)
+		console.log(chalk.bold("Retro SD Card Creator") + ` v${version}`)
 		console.log(`Target: ${chalk.cyan(target)}`)
 		console.log(`Jobs: ${chalk.cyan(String(jobs))} parallel downloads`)
 		if (diskProfile) {

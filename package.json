@@ -1,7 +1,7 @@
 {
 	"name": "retrosd",
 	"version": "2.0.0",
-	"description": "Brick SD Card Creator - BIOS & ROM downloader for retro gaming consoles with DAT-style verification",
+	"description": "Retro console SD Card Creator - BIOS & ROM downloader for retro gaming consoles with DAT-style verification",
 	"keywords": [
 		"retro",
 		"gaming",

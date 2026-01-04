@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Brick SD Card Creator
+# Retro SD Card Creator
 # State-of-the-art BIOS & ROM downloader for retro gaming consoles
 # =============================================================================
 # Version: 2.0.0
@@ -191,7 +191,7 @@ get_exclusion_filter() {
 # =============================================================================
 usage() {
   cat <<EOF
-${BOLD}Brick SD Card Creator${NC} v${VERSION}
+${BOLD}Retro SD Card Creator${NC} v${VERSION}
 Automated BIOS & ROM downloader for retro gaming consoles.
 
 ${BOLD}USAGE:${NC}
@@ -1118,7 +1118,7 @@ main() {
     echo
   fi
   
-  echo -e "${BOLD}Brick SD Card Creator${NC} v${VERSION}"
+  echo -e "${BOLD}Retro SD Card Creator${NC} v${VERSION}"
   echo -e "Target: ${CYAN}$SDCARD_ROOT${NC}"
   echo -e "Jobs: ${CYAN}$JOBS${NC} parallel downloads"
   [[ -n "$FILTER" ]] && echo -e "Filter: ${CYAN}$FILTER${NC}"

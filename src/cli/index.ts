@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * RetroSD CLI - Brick SD Card Creator
+ * RetroSD CLI - Retro SD Card Creator
  * State-of-the-art BIOS & ROM downloader for retro gaming consoles
  * Enhanced with DAT-style verification, metadata generation, and library management
  */
@@ -58,7 +58,7 @@ program
 	.name("retrosd")
 	.version(VERSION)
 	.description(
-		"Brick SD Card Creator – BIOS & ROM downloader for retro gaming consoles",
+		"Retro SD Card Creator – BIOS & ROM downloader for retro gaming consoles",
 	)
 	.argument("<target>", "Path to SD card root directory")
 	.option("-n, --dry-run", "Preview actions without downloading", false)
