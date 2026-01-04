@@ -829,9 +829,7 @@ async function ensureMediaFile(
 	}
 
 	if (hadExisting) {
-		if (verbose) {
-			console.warn(`[Warn] Download failed, using existing: ${destPath}`)
-		}
+		log.scrape.debug({ destPath }, "download failed, using existing file")
 		return { ok: true, downloaded: false }
 	}
 
