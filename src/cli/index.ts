@@ -18,6 +18,8 @@ import {
 	getEntriesBySources,
 	getEntriesByKeys,
 } from "../roms.js"
+import { loadFilterList, parsePatternList } from "../filters.js"
+import { normalizeLanguageCode, normalizeRegionCode } from "../romname.js"
 import {
 	promptConfirmRomDownload,
 	promptSources,
@@ -40,6 +42,7 @@ import type {
 	DownloadResult,
 	DiskProfile,
 } from "../types.js"
+import type { ScrapeOptions } from "../scrape.js"
 
 const VERSION = "2.0.0"
 
@@ -71,8 +74,33 @@ program
 	.option("--non-interactive", "No prompts (for automation)", false)
 	.option("-q, --quiet", "Minimal output", false)
 	.option("--verbose", "Debug output", false)
-	.option("--include-prerelease", "Include beta/demo/proto ROMs", false)
-	.option("--include-unlicensed", "Include unlicensed/pirate ROMs", false)
+	.option("--include-prerelease", "Include beta/demo/proto ROMs")
+	.option("--include-unlicensed", "Include unlicensed/pirate ROMs")
+	.option("--include-hacks", "Include hacked ROMs")
+	.option("--include-homebrew", "Include homebrew ROMs")
+	.option(
+		"--include-pattern <patterns>",
+		"Only include ROMs matching patterns (comma-separated, * wildcards)",
+	)
+	.option(
+		"--exclude-pattern <patterns>",
+		"Exclude ROMs matching patterns (comma-separated, * wildcards)",
+	)
+	.option(
+		"--include-from <file>",
+		"Only include ROMs listed in file (one per line)",
+	)
+	.option("--exclude-from <file>", "Exclude ROMs listed in file (one per line)")
+	.option("--region <code>", "Prefer region for 1G1R (eu, us, jp, etc.)")
+	.option(
+		"--region-priority <list>",
+		"Override region priority list for 1G1R (comma-separated)",
+	)
+	.option("--lang <code>", "Prefer language for 1G1R (en, fr, etc.)")
+	.option(
+		"--lang-priority <list>",
+		"Override language priority list for 1G1R (comma-separated)",
+	)
 	.option("--update", "Revalidate remote ROMs and redownload if changed", false)
 	.option(
 		"--disk-profile <profile>",
@@ -470,8 +498,18 @@ interface CliArgs {
 	nonInteractive: boolean
 	quiet: boolean
 	verbose: boolean
-	includePrerelease: boolean
-	includeUnlicensed: boolean
+	includePrerelease?: boolean
+	includeUnlicensed?: boolean
+	includeHacks?: boolean
+	includeHomebrew?: boolean
+	includePattern?: string
+	excludePattern?: string
+	includeFrom?: string
+	excludeFrom?: string
+	region?: string
+	regionPriority?: string
+	lang?: string
+	langPriority?: string
 	update: boolean
 	diskProfile: string
 	// New options
@@ -513,7 +551,86 @@ async function run(
 		options.includePrerelease ?? config.includePrerelease
 	const includeUnlicensed =
 		options.includeUnlicensed ?? config.includeUnlicensed
+	const includeHacks = options.includeHacks ?? config.includeHacks
+	const includeHomebrew = options.includeHomebrew ?? config.includeHomebrew
 	const update = options.update
+
+	const includePatterns = parsePatternList(options.includePattern)
+	const excludePatterns = parsePatternList(options.excludePattern)
+
+	const normalizePriorityList = (
+		value: string[] | undefined,
+		normalizer: (input: string) => string | null,
+		label: string,
+	): string[] | undefined => {
+		if (!value || value.length === 0) return undefined
+		const normalized: string[] = []
+		const invalid: string[] = []
+		for (const entry of value) {
+			const code = normalizer(entry)
+			if (code) {
+				if (!normalized.includes(code)) normalized.push(code)
+			} else {
+				invalid.push(entry)
+			}
+		}
+		if (invalid.length > 0 && !quiet) {
+			ui.warn(`Ignoring unknown ${label} codes: ${invalid.join(", ")}`)
+		}
+		return normalized.length > 0 ? normalized : undefined
+	}
+
+	let includeList: Set<string> | undefined
+	if (options.includeFrom) {
+		if (!existsSync(options.includeFrom)) {
+			ui.error(`Include list not found: ${options.includeFrom}`)
+			process.exit(1)
+		}
+		includeList = loadFilterList(options.includeFrom)
+	}
+
+	let excludeList: Set<string> | undefined
+	if (options.excludeFrom) {
+		if (!existsSync(options.excludeFrom)) {
+			ui.error(`Exclude list not found: ${options.excludeFrom}`)
+			process.exit(1)
+		}
+		excludeList = loadFilterList(options.excludeFrom)
+	}
+
+	let preferredRegion = options.region ?? config.region
+	if (preferredRegion && !normalizeRegionCode(preferredRegion)) {
+		if (!quiet) ui.warn(`Ignoring unknown region code: ${preferredRegion}`)
+		preferredRegion = undefined
+	}
+
+	let preferredLanguage = options.lang ?? config.lang
+	if (preferredLanguage && !normalizeLanguageCode(preferredLanguage)) {
+		if (!quiet) ui.warn(`Ignoring unknown language code: ${preferredLanguage}`)
+		preferredLanguage = undefined
+	}
+
+	const regionPriority = normalizePriorityList(
+		options.regionPriority
+			? options.regionPriority
+					.split(",")
+					.map(s => s.trim())
+					.filter(Boolean)
+			: config.regionPriority,
+		normalizeRegionCode,
+		"region priority",
+	)
+
+	const languagePriority = normalizePriorityList(
+		options.langPriority
+			? options.langPriority
+					.split(",")
+					.map(s => s.trim())
+					.filter(Boolean)
+			: config.langPriority,
+		normalizeLanguageCode,
+		"language priority",
+	)
 
 	// Validate disk profile
 	const validProfiles = ["fast", "balanced", "slow"] as const
@@ -681,6 +798,16 @@ async function run(
 			...(filter !== undefined ? { filter } : {}),
 			includePrerelease,
 			includeUnlicensed,
+			includeHacks,
+			includeHomebrew,
+			...(includePatterns.length > 0 ? { includePatterns } : {}),
+			...(excludePatterns.length > 0 ? { excludePatterns } : {}),
+			...(includeList ? { includeList } : {}),
+			...(excludeList ? { excludeList } : {}),
+			...(preferredRegion ? { preferredRegion } : {}),
+			...(regionPriority ? { regionPriority } : {}),
+			...(preferredLanguage ? { preferredLanguage } : {}),
+			...(languagePriority ? { languagePriority } : {}),
 			diskProfile,
 			enable1G1R: options["1g1r"],
 			generateMetadata: options.metadata,
@@ -721,18 +848,22 @@ async function run(
 			const { writeFileSync } = await import("node:fs")
 
 			const mediaList = (scrapeMedia || "box").split(",")
-			const scrapeOptions = {
+			const scrapeOptions: ScrapeOptions = {
 				boxArt: mediaList.includes("box"),
 				screenshot: mediaList.includes("screenshot"),
 				video: mediaList.includes("video"),
-				username: options.username ?? config.scrapeUsername,
-				password: options.password ?? config.scrapePassword,
-				devId: options.devId ?? config.scrapeDevId,
-				devPassword: options.devPassword ?? config.scrapeDevPassword,
 				verbose: options.verbose,
 				quiet: options.quiet,
-				concurrency: options.jobs ? parseInt(options.jobs) : undefined,
 			}
+			const username = options.username ?? config.scrapeUsername
+			if (username) scrapeOptions.username = username
+			const password = options.password ?? config.scrapePassword
+			if (password) scrapeOptions.password = password
+			const devId = options.devId ?? config.scrapeDevId
+			if (devId) scrapeOptions.devId = devId
+			const devPassword = options.devPassword ?? config.scrapeDevPassword
+			if (devPassword) scrapeOptions.devPassword = devPassword
+			if (options.jobs) scrapeOptions.concurrency = parseInt(options.jobs)
 
 			for (const entry of selectedEntries) {
 				const systemDir = join(romsDir, entry.destDir)

@@ -107,12 +107,13 @@ export async function promptFilter(
 	const presetChoices = [
 		{ title: "USA only - (USA) ROMs", value: "usa" },
 		{
-			title: "English regions - (USA), (Europe), (World), (Australia)",
+			title:
+				"English regions - (USA), (Europe), (World), (Australia), (UK), (Canada)",
 			value: "english",
 		},
 		{ title: "NTSC regions - (USA), (Japan), (Korea)", value: "ntsc" },
 		{
-			title: "PAL regions - (Europe), (Australia), (Germany), (France)",
+			title: "PAL regions - (Europe), (Australia), (Germany), (France), (UK)",
 			value: "pal",
 		},
 		{ title: "Japanese only - (Japan) ROMs", value: "japanese" },

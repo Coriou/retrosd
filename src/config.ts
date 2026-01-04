@@ -18,6 +18,12 @@ const ConfigSchema = z.object({
 	defaultSystems: z.array(z.string()).optional(),
 	includePrerelease: z.boolean().default(false),
 	includeUnlicensed: z.boolean().default(false),
+	includeHacks: z.boolean().default(false),
+	includeHomebrew: z.boolean().default(false),
+	region: z.string().optional(),
+	regionPriority: z.array(z.string()).optional(),
+	lang: z.string().optional(),
+	langPriority: z.array(z.string()).optional(),
 	// Scraper credentials
 	scrapeUsername: z.string().optional(),
 	scrapePassword: z.string().optional(),
@@ -33,6 +39,8 @@ const DEFAULT_CONFIG: Config = {
 	retryDelay: 2,
 	includePrerelease: false,
 	includeUnlicensed: false,
+	includeHacks: false,
+	includeHomebrew: false,
 }
 
 /**

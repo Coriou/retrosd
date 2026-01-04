@@ -117,6 +117,16 @@ export interface CliOptions {
 	verbose: boolean
 	includePrerelease: boolean
 	includeUnlicensed: boolean
+	includeHacks: boolean
+	includeHomebrew: boolean
+	includePattern?: string
+	excludePattern?: string
+	includeFrom?: string
+	excludeFrom?: string
+	region?: string
+	regionPriority?: string
+	lang?: string
+	langPriority?: string
 	update: boolean
 	diskProfile?: DiskProfile
 	// New options for library management

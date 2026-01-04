@@ -6,6 +6,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import type { FileHash } from "./hash.js"
+import { parseRomFilenameParts } from "./romname.js"
 
 export interface RomMetadata {
 	/** Display title */
@@ -43,46 +44,18 @@ export function parseRomFilename(
 	system: string,
 	source: "no-intro" | "redump",
 ): Omit<RomMetadata, "hash" | "createdAt" | "updatedAt"> {
-	// Remove extension
-	const nameWithoutExt = filename.replace(/\.[^.]+$/, "")
+	const parsed = parseRomFilenameParts(filename)
+	const nameWithoutExt = parsed.baseName
 	const fullFilename = filename
 
-	// Extract regions (in parentheses)
-	const regionMatches = nameWithoutExt.match(/\(([^)]+)\)/g) || []
-	const regions = regionMatches
-		.map(m => m.slice(1, -1))
-		.filter(r =>
-			/^(USA|Europe|Japan|World|Australia|Asia|Korea|Brazil|China|Germany|France|Spain|Italy|Netherlands|Sweden|En|Ja|Fr|De|Es|It|Pt)$/i.test(
-				r,
-			),
-		)
-
-	// Extract version/revision info
-	const versionMatch = nameWithoutExt.match(/\((Rev|v)\s*[\dA-Za-z.]+\)/i)
-	const version = versionMatch ? versionMatch[0].slice(1, -1) : undefined
-
-	// Extract tags (Beta, Demo, Proto, etc.)
-	const tagMatches = nameWithoutExt.match(/\(([^)]+)\)/g) || []
-	const tags = tagMatches
-		.map(m => m.slice(1, -1))
-		.filter(t =>
-			/^(Beta|Demo|Proto|Sample|Preview|Unl|Pirate|Bootleg|Hack|Homebrew)$/i.test(
-				t,
-			),
-		)
-
-	// Extract title (everything before first parenthesis)
-	const titleMatch = nameWithoutExt.match(/^([^(]+)/)
-	const title = titleMatch ? titleMatch[1]!.trim() : nameWithoutExt
-
 	return {
-		title,
+		title: parsed.title,
 		filename: nameWithoutExt,
 		fullFilename,
 		system,
-		region: regions,
-		...(version ? { version } : {}),
-		tags,
+		region: parsed.regions,
+		...(parsed.version ? { version: parsed.version } : {}),
+		tags: parsed.tags,
 		source,
 	}
 }

@@ -26,8 +26,8 @@ A comprehensive **ROM library manager** for retro gaming consoles with DAT-style
 **What it does:**
 
 - Automatically selects the best version of each game when multiple regional variants exist
-- Uses intelligent region priority scoring (USA > World > English > Europe > Japan...)
-- Prefers newer revisions (Rev 3 > Rev 2 > Rev 1)
+- Uses intelligent region priority scoring (Europe > USA > World > Japan...)
+- Prefers newer revisions (Rev 3 > Rev 2 > Rev 1) and keeps multi-disc sets intact
 
 **Why it matters:**
 
@@ -43,7 +43,7 @@ Instead of downloading:
 - Super Mario Bros. (Japan).nes
 - Super Mario Bros. (World).nes
 
-You get just: `Super Mario Bros. (USA).nes` (the highest priority version)
+You get just: `Super Mario Bros. (Europe).nes` (the highest priority version)
 
 ---
 
@@ -252,14 +252,16 @@ retrosd metadata /path/to/sdcard --overwrite
 
 RetroSD provides flexible filtering to customize your collection:
 
-- **Region priority** considers both region and version/revision info
+- **Region priority** (EU-first by default) considers region and revision info
+- **Language priority** refines 1G1R when regions tie
 - **Exclusion filters** work alongside 1G1R for precise control
+- **Wildcard include/exclude patterns** for quick, targeted filtering
 - **Custom regex** patterns for power users with specific needs
 - **Presets** for common preferences (usa, english, ntsc, pal, japanese, all)
 
 #### Content Exclusion Filters
 
-By default, RetroSD filters out pre-release and unlicensed content to maintain a clean, official game collection:
+By default, RetroSD filters out pre-release, unlicensed, hacked, and homebrew content to maintain a clean, official game collection:
 
 **`--include-prerelease`** - Include pre-release versions (excluded by default)
 
@@ -273,7 +275,19 @@ By default, RetroSD filters out pre-release and unlicensed content to maintain a
 - **Example:** `Super Mario 4 (Pirate).gb`
 - **Use case:** Preservation or testing unofficial releases
 
-**Combine both flags** to include everything, or use neither for curated official releases only.
+**`--include-hacks`** - Include hacked ROMs (excluded by default)
+
+- **Includes:** Hack, Hacked, Romhack variants
+- **Example:** `Metroid (USA) (Hack).nes`
+- **Use case:** ROM hack collections or fan patches
+
+**`--include-homebrew`** - Include homebrew ROMs (excluded by default)
+
+- **Includes:** Homebrew releases
+- **Example:** `Micro Mages (Homebrew).nes`
+- **Use case:** Indie/homebrew collections
+
+**Combine flags** to include everything, or use none for curated official releases only.
 
 ```bash
 # Default: official releases only (no betas, no pirates)
@@ -282,8 +296,47 @@ retrosd --systems=GB /path/to/sdcard
 # Include beta/demo versions
 retrosd --systems=GB --include-prerelease /path/to/sdcard
 
-# Include everything (official + betas + unlicensed)
-retrosd --systems=GB --include-prerelease --include-unlicensed /path/to/sdcard
+# Include everything (official + prerelease + unlicensed + hacks + homebrew)
+retrosd --systems=GB --include-prerelease --include-unlicensed \
+  --include-hacks --include-homebrew /path/to/sdcard
+```
+
+#### Pattern and List Filters
+
+**`--include-pattern` / `--exclude-pattern`** - Wildcard filtering (`*` matches any text)
+
+```bash
+# Only include titles starting with "Super"
+retrosd --systems=SNES --include-pattern "Super*" /path/to/sdcard
+
+# Exclude BIOS and beta files
+retrosd --systems=SNES --exclude-pattern "*[BIOS]*,*Beta*" /path/to/sdcard
+```
+
+**`--include-from` / `--exclude-from`** - Include/exclude from a file (one filename per line)
+
+```bash
+retrosd --systems=SNES --include-from ./include.txt /path/to/sdcard
+retrosd --systems=SNES --exclude-from ./exclude.txt /path/to/sdcard
+```
+
+#### Region and Language Priority
+
+**`--region` / `--region-priority`** - Prefer regions for 1G1R selection
+
+```bash
+# Prefer Japan for a single run
+retrosd --systems=GB --region jp /path/to/sdcard
+
+# Override the entire region priority list
+retrosd --systems=GB --region-priority "eu,us,wor,jp" /path/to/sdcard
+```
+
+**`--lang` / `--lang-priority`** - Prefer languages when regions tie
+
+```bash
+retrosd --systems=GB --lang en /path/to/sdcard
+retrosd --systems=GB --lang-priority "en,fr,de" /path/to/sdcard
 ```
 
 ### Download Features
@@ -419,6 +472,7 @@ retrosd export /path/to/sdcard -o ~/my-collection.json
 - `roms.ts` - ROM downloading and organization with metadata integration
 - `hash.ts` - SHA-1/CRC32 computation with streaming for large files
 - `metadata.ts` - Filename parsing and JSON sidecar generation
+- `romname.ts` - Shared ROM filename parsing (regions, languages, revisions, tags)
 - `collection.ts` - Scan, verify, export operations
 - `convert.ts` - CHD/CSO format conversion
 - `scrape.ts` - ScreenScraper API integration for artwork/media
@@ -481,7 +535,7 @@ Natural next steps could include:
 
 - **1G1R filtering** is enabled by default (use `--no-1g1r` to disable)
 - **Metadata generation** is enabled by default (use `--no-metadata` to disable)
-- **Prerelease & unlicensed** ROMs are excluded by default (use `--include-prerelease` and `--include-unlicensed` to include)
+- **Prerelease, unlicensed, hacks, and homebrew** ROMs are excluded by default (use `--include-prerelease`, `--include-unlicensed`, `--include-hacks`, and `--include-homebrew` to include)
 
 ### Recommended Workflow
 

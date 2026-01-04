@@ -1,37 +1,63 @@
 /**
- * Region filter presets and exclusion patterns
- * Enhanced with priority scoring for smart 1G1R (one-game-one-ROM) selection
+ * Region filter presets and smart 1G1R (one-game-one-ROM) selection helpers.
  */
 
+import { readFileSync } from "node:fs"
+import { basename } from "node:path"
 import type { RegionPreset } from "./types.js"
+import {
+	parseRomFilenameParts,
+	normalizeRegionCode,
+	normalizeLanguageCode,
+	type ParsedRomName,
+	type VersionInfo,
+	REGION_CODE_LABELS,
+} from "./romname.js"
 
-/**
- * Region priority scores for 1G1R selection
- * Higher scores = preferred regions when duplicates exist
- */
-export const REGION_PRIORITY: Record<string, number> = {
-	USA: 100,
-	World: 95,
-	En: 90,
-	Europe: 85,
-	Australia: 80,
-	Japan: 75,
-	Asia: 70,
-	Korea: 65,
-	Germany: 60,
-	France: 55,
-	Spain: 50,
-	Italy: 45,
-	Brazil: 40,
-	China: 35,
-	Netherlands: 30,
-	Sweden: 25,
+export const DEFAULT_REGION_PRIORITY = [
+	"eu",
+	"us",
+	"ss",
+	"uk",
+	"wor",
+	"jp",
+	"au",
+	"ame",
+	"de",
+	"cus",
+	"cn",
+	"kr",
+	"asi",
+	"br",
+	"sp",
+	"fr",
+	"gr",
+	"it",
+	"no",
+	"dk",
+	"nz",
+	"nl",
+	"pl",
+	"ru",
+	"se",
+	"tw",
+	"ca",
+]
+
+export const DEFAULT_LANGUAGE_PRIORITY = ["en", "de", "fr", "es"]
+
+const LEGACY_VERSION_PRIORITY: Record<string, number> = {
+	"rev 3": 30,
+	"rev 2": 20,
+	"rev 1": 10,
+	"rev a": 15,
+	"rev b": 12,
+	"rev c": 10,
+	"v1.2": 22,
+	"v1.1": 11,
+	"v1.0": 5,
 }
 
-/**
- * Version/revision priority
- * Prefer newer revisions when available
- */
 export const VERSION_PRIORITY: Record<string, number> = {
 	"Rev 3": 30,
 	"Rev 2": 20,
@@ -44,159 +70,453 @@ export const VERSION_PRIORITY: Record<string, number> = {
 	"v1.0": 5,
 }
 
-/**
- * Region presets - properly escaped for JavaScript RegExp
- * The bash script used mixed styles: \(USA\) (BRE) vs (USA) (ERE)
- * This caused filters to not match correctly
- */
+export const REGION_PRIORITY: Record<string, number> = (() => {
+	const map: Record<string, number> = {}
+	const total = DEFAULT_REGION_PRIORITY.length
+	for (const [index, code] of DEFAULT_REGION_PRIORITY.entries()) {
+		const rank = total - index
+		map[code] = rank
+		const label = REGION_CODE_LABELS[code]
+		if (label) map[label] = rank
+	}
+	return map
+})()
+
+function buildPresetRegex(tokens: string[]): RegExp {
+	const fragments = tokens.map(token => {
+		const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+		if (/^[A-Za-z0-9]+$/.test(token)) {
+			return `\\b${escaped}\\b`
+		}
+		return escaped
+	})
+	return new RegExp(`\\(([^)]*(?:${fragments.join("|")})[^)]*)\\)`, "i")
+}
+
 export const REGION_PRESETS: Record<RegionPreset, RegExp | null> = {
-	usa: /\(USA\)/,
-	english: /\((USA|Europe|World|Australia|En)\)/,
-	ntsc: /\((USA|Japan|Korea)\)/,
-	pal: /\((Europe|Australia|Germany|France|Spain|Italy|Netherlands|Sweden)\)/,
-	japanese: /\(Japan\)/,
-	all: null, // null means no filter (match everything)
+	usa: buildPresetRegex(["USA", "US"]),
+	english: buildPresetRegex([
+		"USA",
+		"US",
+		"Europe",
+		"World",
+		"Australia",
+		"UK",
+		"United Kingdom",
+		"Canada",
+		"En",
+	]),
+	ntsc: buildPresetRegex(["USA", "US", "Japan", "Korea"]),
+	pal: buildPresetRegex([
+		"Europe",
+		"Australia",
+		"Germany",
+		"France",
+		"Spain",
+		"Italy",
+		"Netherlands",
+		"Sweden",
+		"UK",
+		"United Kingdom",
+	]),
+	japanese: buildPresetRegex(["Japan"]),
+	all: null,
 }
 
-/**
- * Exclusion patterns for pre-release and unlicensed content
- */
 export const EXCLUSION_PATTERNS = {
-	prerelease: /\((Beta|Demo|Proto|Sample|Preview)\)/i,
-	unlicensed: /\((Unl|Pirate|Bootleg)\)/i,
+	prerelease:
+		/\([^)]*(Beta|Demo|Proto|Sample|Preview|Alpha|Pre-Release|Prototype)[^)]*\)/i,
+	unlicensed: /\([^)]*(Unl|Unlicensed|Pirate|Bootleg)[^)]*\)/i,
+	hacks: /\([^)]*(Hack|Hacked|Romhack)[^)]*\)/i,
+	homebrew: /\([^)]*(Homebrew|Home Brew)[^)]*\)/i,
 }
 
-/**
- * Get the filter regex for a preset
- */
+export interface ExclusionOptions {
+	includePrerelease: boolean
+	includeUnlicensed: boolean
+	includeHacks: boolean
+	includeHomebrew: boolean
+}
+
+export interface FilenameFilterOptions {
+	nameFilter?: RegExp | null
+	regionFilter?: RegExp | null
+	exclusionFilter?: RegExp | null
+	includePatterns?: string[]
+	excludePatterns?: string[]
+	includeList?: Set<string>
+	excludeList?: Set<string>
+	exclusion?: ExclusionOptions
+}
+
+export interface PriorityOptions {
+	preferredRegion?: string
+	regionPriority?: string[]
+	preferredLanguage?: string
+	languagePriority?: string[]
+}
+
 export function getPresetFilter(preset: RegionPreset): RegExp | null {
 	return REGION_PRESETS[preset]
 }
 
-/**
- * Build a combined exclusion regex based on options
- */
-export function getExclusionFilter(options: {
-	includePrerelease: boolean
-	includeUnlicensed: boolean
-}): RegExp | null {
+export function getExclusionFilter(options: ExclusionOptions): RegExp | null {
 	const patterns: string[] = []
-
-	if (!options.includePrerelease) {
+	if (!options.includePrerelease)
 		patterns.push(EXCLUSION_PATTERNS.prerelease.source)
-	}
-
-	if (!options.includeUnlicensed) {
+	if (!options.includeUnlicensed)
 		patterns.push(EXCLUSION_PATTERNS.unlicensed.source)
-	}
-
-	if (patterns.length === 0) {
-		return null
-	}
-
+	if (!options.includeHacks) patterns.push(EXCLUSION_PATTERNS.hacks.source)
+	if (!options.includeHomebrew)
+		patterns.push(EXCLUSION_PATTERNS.homebrew.source)
+	if (patterns.length === 0) return null
 	return new RegExp(patterns.join("|"), "i")
 }
 
-/**
- * Parse a custom filter string into a RegExp
- * Handles user-provided patterns that might already have escapes or not
- */
 export function parseCustomFilter(filter: string): RegExp {
-	// If it looks like the user intended literal parentheses, keep them
-	// Otherwise, treat as a standard regex
-	return new RegExp(filter)
+	const trimmed = filter.trim()
+	const match = trimmed.match(/^\/(.+)\/([gimsuy]*)$/)
+	try {
+		if (match) {
+			return new RegExp(match[1] ?? "", match[2] ?? "")
+		}
+		return new RegExp(trimmed)
+	} catch (err) {
+		throw new Error(
+			`Invalid regex "${filter}": ${err instanceof Error ? err.message : String(err)}`,
+		)
+	}
 }
 
-/**
- * Filter a list of filenames using the given filters
- */
+function normalizeFilterKey(filename: string): string {
+	return filename.trim().toLowerCase()
+}
+
+export function parsePatternList(input?: string): string[] {
+	if (!input) return []
+	const patterns: string[] = []
+	let current = ""
+	let escaped = false
+	for (const ch of input) {
+		if (escaped) {
+			current += ch
+			escaped = false
+			continue
+		}
+		if (ch === "\\") {
+			escaped = true
+			continue
+		}
+		if (ch === ",") {
+			if (current.trim()) patterns.push(current.trim())
+			current = ""
+			continue
+		}
+		current += ch
+	}
+	if (current.trim()) patterns.push(current.trim())
+	return patterns
+}
+
+function globToRegex(pattern: string): RegExp {
+	const placeholderStar = "\u0000"
+	const placeholderQ = "\u0001"
+	const withPlaceholders = pattern
+		.replace(/\*/g, placeholderStar)
+		.replace(/\?/g, placeholderQ)
+	const escaped = withPlaceholders.replace(/[.+^${}()|[\]\\]/g, "\\$&")
+	const regexSource =
+		"^" +
+		escaped
+			.replace(new RegExp(placeholderStar, "g"), ".*")
+			.replace(new RegExp(placeholderQ, "g"), ".") +
+		"$"
+	return new RegExp(regexSource, "i")
+}
+
+function compilePatterns(patterns?: string[]): RegExp[] {
+	if (!patterns || patterns.length === 0) return []
+	return patterns
+		.map(p => p.trim())
+		.filter(Boolean)
+		.map(globToRegex)
+}
+
+export function loadFilterList(filePath: string): Set<string> {
+	const raw = readFileSync(filePath, "utf8")
+	const lines = raw.split(/\r?\n/)
+	const out = new Set<string>()
+	for (const line of lines) {
+		const trimmed = line.trim()
+		if (!trimmed || trimmed.startsWith("#")) continue
+		const cleaned = trimmed.replace(/^["']|["']$/g, "")
+		const name = basename(cleaned)
+		if (name) out.add(normalizeFilterKey(name))
+	}
+	return out
+}
+
+function shouldExclude(filename: string, rules: ExclusionOptions): boolean {
+	if (
+		rules.includePrerelease &&
+		rules.includeUnlicensed &&
+		rules.includeHacks &&
+		rules.includeHomebrew
+	) {
+		return false
+	}
+	const parsed = parseRomFilenameParts(filename)
+	if (!rules.includePrerelease && parsed.flags.prerelease) return true
+	if (!rules.includeUnlicensed && parsed.flags.unlicensed) return true
+	if (!rules.includeHacks && parsed.flags.hack) return true
+	if (!rules.includeHomebrew && parsed.flags.homebrew) return true
+	return false
+}
+
 export function applyFilters(
 	filenames: string[],
-	options: {
-		regionFilter: RegExp | null
-		exclusionFilter: RegExp | null
-	},
+	options: FilenameFilterOptions,
 ): string[] {
-	let results = filenames
+	const includeRegexes = compilePatterns(options.includePatterns)
+	const excludeRegexes = compilePatterns(options.excludePatterns)
+	const hasIncludeList = !!options.includeList && options.includeList.size > 0
+	const hasExcludeList = !!options.excludeList && options.excludeList.size > 0
+	const nameFilter = options.nameFilter ?? options.regionFilter ?? null
+	const hasNameFilter = !!nameFilter
+	const exclusionFilter = options.exclusionFilter ?? null
+	const hasIncludePatterns = includeRegexes.length > 0
+	const hasExcludePatterns = excludeRegexes.length > 0
+	const rules = options.exclusion
 
-	// Apply region filter (include only matching)
-	if (options.regionFilter) {
-		results = results.filter(f => options.regionFilter!.test(f))
+	return filenames.filter(filename => {
+		const key = normalizeFilterKey(filename)
+		if (hasIncludeList && !options.includeList!.has(key)) return false
+		if (hasIncludePatterns && !includeRegexes.some(re => re.test(filename)))
+			return false
+		if (hasNameFilter) {
+			const filter = nameFilter!
+			if (filter.global || filter.sticky) filter.lastIndex = 0
+			if (!filter.test(filename)) return false
+		}
+		if (exclusionFilter) {
+			if (exclusionFilter.global || exclusionFilter.sticky)
+				exclusionFilter.lastIndex = 0
+			if (exclusionFilter.test(filename)) return false
+		}
+		if (hasExcludeList && options.excludeList!.has(key)) return false
+		if (hasExcludePatterns && excludeRegexes.some(re => re.test(filename)))
+			return false
+		if (rules && shouldExclude(filename, rules)) return false
+		return true
+	})
+}
+
+function uniqueList(items: string[]): string[] {
+	const seen = new Set<string>()
+	const out: string[] = []
+	for (const item of items) {
+		if (seen.has(item)) continue
+		seen.add(item)
+		out.push(item)
 	}
+	return out
+}
 
-	// Apply exclusion filter (exclude matching)
-	if (options.exclusionFilter) {
-		results = results.filter(f => !options.exclusionFilter!.test(f))
+function resolvePriorityList(
+	defaultList: string[],
+	overrideList: string[] | undefined,
+	preferred: string | undefined,
+	normalizer: (value: string) => string | null,
+): string[] {
+	const base =
+		overrideList && overrideList.length > 0 ? overrideList : defaultList
+	const normalizedBase = uniqueList(
+		base
+			.map(value => normalizer(value))
+			.filter((value): value is string => !!value),
+	)
+	const normalizedFallback = uniqueList(
+		defaultList
+			.map(value => normalizer(value))
+			.filter((value): value is string => !!value),
+	)
+	const normalized =
+		normalizedBase.length > 0 ? normalizedBase : normalizedFallback
+	const preferredCode = preferred ? normalizer(preferred) : null
+	if (preferredCode) {
+		return [preferredCode, ...normalized.filter(code => code !== preferredCode)]
 	}
-
-	return results
+	return normalized
 }
 
-/**
- * Extract regions from filename
- */
-function extractRegions(filename: string): string[] {
-	const matches = filename.match(/\(([^)]+)\)/g) || []
-	return matches
-		.map(m => m.slice(1, -1))
-		.filter(r => REGION_PRIORITY[r] !== undefined)
-}
-
-/**
- * Extract version/revision from filename
- */
-function extractVersion(filename: string): string | null {
-	const match = filename.match(/\((Rev|v)\s*[\dA-Za-z.]+\)/i)
-	return match ? match[0].slice(1, -1) : null
-}
-
-/**
- * Calculate priority score for a ROM filename
- * Used for 1G1R (one-game-one-ROM) selection
- */
-export function calculatePriority(filename: string): number {
-	let score = 0
-
-	// Region priority (highest region wins)
-	const regions = extractRegions(filename)
-	if (regions.length > 0) {
-		score += Math.max(...regions.map(r => REGION_PRIORITY[r] || 0))
+function buildPriorityMap(list: string[]): Map<string, number> {
+	const map = new Map<string, number>()
+	const total = list.length
+	for (const [index, code] of list.entries()) {
+		map.set(code, total - index)
 	}
+	return map
+}
 
-	// Version priority
-	const version = extractVersion(filename)
-	if (version) {
-		score += VERSION_PRIORITY[version] || 0
+function getRank(values: string[], map: Map<string, number>): number {
+	let rank = 0
+	for (const value of values) {
+		const score = map.get(value) ?? 0
+		if (score > rank) rank = score
 	}
+	return rank
+}
 
-	return score
+function rankVersion(info?: VersionInfo): number {
+	if (!info) return 0
+	const legacy = LEGACY_VERSION_PRIORITY[info.raw.toLowerCase()]
+	if (legacy !== undefined) return legacy
+	let rank = 0
+	for (const part of info.parts) {
+		rank = rank * 100 + part
+	}
+	return rank
+}
+
+function normalizeTitleKey(title: string): string {
+	return title.toLowerCase().replace(/\s+/g, " ").trim()
+}
+
+export function calculatePriority(
+	filename: string,
+	options: PriorityOptions = {},
+): number {
+	const parsed = parseRomFilenameParts(filename)
+	const regionPriority = resolvePriorityList(
+		DEFAULT_REGION_PRIORITY,
+		options.regionPriority,
+		options.preferredRegion,
+		normalizeRegionCode,
+	)
+	const languagePriority = resolvePriorityList(
+		DEFAULT_LANGUAGE_PRIORITY,
+		options.languagePriority,
+		options.preferredLanguage,
+		normalizeLanguageCode,
+	)
+	const regionMap = buildPriorityMap(regionPriority)
+	const languageMap = buildPriorityMap(languagePriority)
+	const regionRank = getRank(parsed.regionCodes, regionMap)
+	const languageRank = getRank(parsed.languages, languageMap)
+	const versionRank = rankVersion(parsed.versionInfo)
+	return regionRank * 10000 + languageRank * 100 + versionRank
+}
+
+interface DiscCandidate {
+	filename: string
+	versionRank: number
+}
+
+interface GroupCandidate {
+	regionRank: number
+	languageRank: number
+	versionRank: number
+	discs: Map<string, DiscCandidate>
+}
+
+function compareGroups(a: GroupCandidate, b: GroupCandidate): number {
+	if (a.regionRank !== b.regionRank) return a.regionRank - b.regionRank
+	if (a.languageRank !== b.languageRank) return a.languageRank - b.languageRank
+	if (a.versionRank !== b.versionRank) return a.versionRank - b.versionRank
+	const discDiff = a.discs.size - b.discs.size
+	if (discDiff !== 0) return discDiff
+	return 0
+}
+
+function buildGroupKey(parsed: ParsedRomName): string {
+	const regionKey = parsed.regionCodes.slice().sort().join(",")
+	const languageKey = parsed.languages.slice().sort().join(",")
+	return `${regionKey}|${languageKey}`
+}
+
+function buildDiscKey(parsed: ParsedRomName): string {
+	if (!parsed.disc) return "single"
+	const { type, index, total } = parsed.disc
+	return total ? `${type}:${index}/${total}` : `${type}:${index}`
 }
 
 /**
- * Extract base game name without region/version tags
+ * Apply 1G1R (one-game-one-ROM) filtering.
+ * Keeps the best region/language set per title and preserves all discs.
  */
-function extractGameName(filename: string): string {
-	// Remove everything from first parenthesis onward
-	const match = filename.match(/^([^(]+)/)
-	return match ? match[1]!.trim() : filename
-}
+export function apply1G1R(
+	filenames: string[],
+	options: PriorityOptions = {},
+): string[] {
+	if (filenames.length <= 1) return filenames
 
-/**
- * Apply 1G1R (one-game-one-ROM) filtering
- * Keeps only the highest priority version of each game
- */
-export function apply1G1R(filenames: string[]): string[] {
-	const gameMap = new Map<string, { filename: string; priority: number }>()
+	const regionPriority = resolvePriorityList(
+		DEFAULT_REGION_PRIORITY,
+		options.regionPriority,
+		options.preferredRegion,
+		normalizeRegionCode,
+	)
+	const languagePriority = resolvePriorityList(
+		DEFAULT_LANGUAGE_PRIORITY,
+		options.languagePriority,
+		options.preferredLanguage,
+		normalizeLanguageCode,
+	)
+	const regionMap = buildPriorityMap(regionPriority)
+	const languageMap = buildPriorityMap(languagePriority)
+
+	const titleGroups = new Map<string, Map<string, GroupCandidate>>()
 
 	for (const filename of filenames) {
-		const gameName = extractGameName(filename)
-		const priority = calculatePriority(filename)
+		const parsed = parseRomFilenameParts(filename)
+		const titleKey = normalizeTitleKey(parsed.title)
+		const groupKey = buildGroupKey(parsed)
+		const discKey = buildDiscKey(parsed)
+		const regionRank = getRank(parsed.regionCodes, regionMap)
+		const languageRank = getRank(parsed.languages, languageMap)
+		const versionRank = rankVersion(parsed.versionInfo)
 
-		const existing = gameMap.get(gameName)
-		if (!existing || priority > existing.priority) {
-			gameMap.set(gameName, { filename, priority })
+		let groupMap = titleGroups.get(titleKey)
+		if (!groupMap) {
+			groupMap = new Map()
+			titleGroups.set(titleKey, groupMap)
+		}
+
+		let group = groupMap.get(groupKey)
+		if (!group) {
+			group = {
+				regionRank,
+				languageRank,
+				versionRank,
+				discs: new Map(),
+			}
+			groupMap.set(groupKey, group)
+		} else {
+			group.regionRank = Math.max(group.regionRank, regionRank)
+			group.languageRank = Math.max(group.languageRank, languageRank)
+			group.versionRank = Math.max(group.versionRank, versionRank)
+		}
+
+		const existingDisc = group.discs.get(discKey)
+		if (!existingDisc || versionRank > existingDisc.versionRank) {
+			group.discs.set(discKey, { filename, versionRank })
 		}
 	}
 
-	return Array.from(gameMap.values()).map(entry => entry.filename)
+	const selected = new Set<string>()
+
+	for (const groupMap of titleGroups.values()) {
+		let bestGroup: GroupCandidate | null = null
+		for (const group of groupMap.values()) {
+			if (!bestGroup || compareGroups(group, bestGroup) > 0) {
+				bestGroup = group
+			}
+		}
+		if (!bestGroup) continue
+		for (const disc of bestGroup.discs.values()) {
+			selected.add(disc.filename)
+		}
+	}
+
+	return filenames.filter(name => selected.has(name))
 }

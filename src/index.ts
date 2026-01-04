@@ -10,6 +10,7 @@ export * from "./bios.js"
 export * from "./roms.js"
 export * from "./hash.js"
 export * from "./metadata.js"
+export * from "./romname.js"
 export * from "./backpressure.js"
 export * from "./extract.js"
 export {

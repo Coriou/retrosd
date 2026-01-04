@@ -27,7 +27,6 @@ import { downloadFile, anyExtensionExists, HTTP_AGENT } from "./download.js"
 import {
 	applyFilters,
 	getPresetFilter,
-	getExclusionFilter,
 	parseCustomFilter,
 	apply1G1R,
 } from "./filters.js"
@@ -588,8 +587,18 @@ export async function downloadRomEntry(
 	options: DownloadOptions & {
 		preset?: RegionPreset
 		filter?: string
-		includePrerelease: boolean
-		includeUnlicensed: boolean
+		includePrerelease?: boolean
+		includeUnlicensed?: boolean
+		includeHacks?: boolean
+		includeHomebrew?: boolean
+		includePatterns?: string[]
+		excludePatterns?: string[]
+		includeList?: Set<string>
+		excludeList?: Set<string>
+		preferredRegion?: string
+		regionPriority?: string[]
+		preferredLanguage?: string
+		languagePriority?: string[]
 		diskProfile?: DiskProfile
 		update: boolean
 		manifest: ManifestFile
@@ -656,26 +665,59 @@ export async function downloadRomEntry(
 	}
 
 	// Apply filters (on filenames)
-	const regionFilter = options.preset
-		? getPresetFilter(options.preset)
-		: options.filter
-			? parseCustomFilter(options.filter)
-			: null
-
-	const exclusionFilter = getExclusionFilter({
-		includePrerelease: options.includePrerelease,
-		includeUnlicensed: options.includeUnlicensed,
-	})
+	let nameFilter: RegExp | null = null
+	try {
+		nameFilter = options.preset
+			? getPresetFilter(options.preset)
+			: options.filter
+				? parseCustomFilter(options.filter)
+				: null
+	} catch (err) {
+		return {
+			label: `${entry.label} [${entry.source}]`,
+			success: false,
+			error: `Invalid filter regex: ${err instanceof Error ? err.message : String(err)}`,
+		}
+	}
 
 	const filteredFilenames = applyFilters(
 		listing.map(e => e.filename),
-		{ regionFilter, exclusionFilter },
+		{
+			nameFilter,
+			exclusion: {
+				includePrerelease: options.includePrerelease ?? false,
+				includeUnlicensed: options.includeUnlicensed ?? false,
+				includeHacks: options.includeHacks ?? false,
+				includeHomebrew: options.includeHomebrew ?? false,
+			},
+			...(options.includePatterns && options.includePatterns.length > 0
+				? { includePatterns: options.includePatterns }
+				: {}),
+			...(options.excludePatterns && options.excludePatterns.length > 0
+				? { excludePatterns: options.excludePatterns }
+				: {}),
+			...(options.includeList ? { includeList: options.includeList } : {}),
+			...(options.excludeList ? { excludeList: options.excludeList } : {}),
+		},
 	)
 
 	// Apply 1G1R if enabled (defaults to true for better library management)
 	const enable1G1R = (options as { enable1G1R?: boolean }).enable1G1R ?? true
 	const finalFilenames = enable1G1R
-		? apply1G1R(filteredFilenames)
+		? apply1G1R(filteredFilenames, {
+				...(options.preferredRegion
+					? { preferredRegion: options.preferredRegion }
+					: {}),
+				...(options.regionPriority
+					? { regionPriority: options.regionPriority }
+					: {}),
+				...(options.preferredLanguage
+					? { preferredLanguage: options.preferredLanguage }
+					: {}),
+				...(options.languagePriority
+					? { languagePriority: options.languagePriority }
+					: {}),
+			})
 		: filteredFilenames
 
 	// Create a map for quick size lookup
@@ -1127,8 +1169,18 @@ export async function downloadRoms(
 	options: DownloadOptions & {
 		preset?: RegionPreset
 		filter?: string
-		includePrerelease: boolean
-		includeUnlicensed: boolean
+		includePrerelease?: boolean
+		includeUnlicensed?: boolean
+		includeHacks?: boolean
+		includeHomebrew?: boolean
+		includePatterns?: string[]
+		excludePatterns?: string[]
+		includeList?: Set<string>
+		excludeList?: Set<string>
+		preferredRegion?: string
+		regionPriority?: string[]
+		preferredLanguage?: string
+		languagePriority?: string[]
 		diskProfile?: DiskProfile
 		update: boolean
 	},
