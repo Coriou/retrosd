@@ -31,6 +31,7 @@ import {
 	setupPromptHandlers,
 } from "../prompts.js"
 import { loadPreferences, updatePreferences } from "../preferences.js"
+import type { UserPreferences } from "../preferences.js"
 import {
 	scanCollection,
 	verifyCollection,
@@ -782,9 +783,7 @@ async function run(
 
 		// Save user selections for next run
 		if (!nonInteractive) {
-			const prefsUpdate: any = {
-				confirmRomDownload: true,
-				sources: selectedSources,
+			const prefsUpdate: Partial<UserPreferences> = {
 				systems: selectedEntries.map(e => e.key),
 				scrape: shouldScrape,
 			}
