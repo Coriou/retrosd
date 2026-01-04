@@ -209,25 +209,25 @@ const LANGUAGE_INPUT_ALIASES: Record<string, string> = {
 }
 
 const PRERELEASE_PATTERNS = [
-	/^beta\b/i,
-	/^demo\b/i,
-	/^proto\b/i,
-	/^prototype\b/i,
-	/^sample\b/i,
-	/^preview\b/i,
-	/^alpha\b/i,
-	/^pre-?release\b/i,
+	/\bbeta\b/i,
+	/\bdemo\b/i,
+	/\bproto\b/i,
+	/\bprototype\b/i,
+	/\bsample\b/i,
+	/\bpreview\b/i,
+	/\balpha\b/i,
+	/\bpre-?release\b/i,
 ]
 
 const UNLICENSED_PATTERNS = [
-	/^unl\b/i,
-	/^unlicensed\b/i,
-	/^pirate\b/i,
-	/^bootleg\b/i,
+	/\bunl\b/i,
+	/\bunlicensed\b/i,
+	/\bpirate\b/i,
+	/\bbootleg\b/i,
 ]
 
-const HACK_PATTERNS = [/^hack\b/i, /^hacked\b/i, /^romhack\b/i]
-const HOMEBREW_PATTERNS = [/^homebrew\b/i, /^home\s?brew\b/i]
+const HACK_PATTERNS = [/\bhack\b/i, /\bhacked\b/i, /\bromhack\b/i]
+const HOMEBREW_PATTERNS = [/\bhomebrew\b/i, /\bhome\s?brew\b/i]
 
 function normalizeKey(value: string): string {
 	return value

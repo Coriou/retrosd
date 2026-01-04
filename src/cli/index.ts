@@ -22,10 +22,12 @@ import { loadFilterList, parsePatternList } from "../filters.js"
 import { normalizeLanguageCode, normalizeRegionCode } from "../romname.js"
 import {
 	promptConfirmRomDownload,
+	promptConfirmBiosDownload,
 	promptSources,
 	promptSystems,
 	promptFilter,
 	promptScrapeOptions,
+	promptMetadataOptions,
 	setupPromptHandlers,
 } from "../prompts.js"
 import { loadPreferences, updatePreferences } from "../preferences.js"
@@ -107,8 +109,8 @@ program
 		"Disk speed profile: fast (SSD), balanced (HDD), slow (SD card/NAS)",
 		"balanced",
 	)
-	.option("--no-1g1r", "Disable 1G1R (one-game-one-ROM) filtering", false)
-	.option("--no-metadata", "Skip metadata generation", false)
+	.option("--no-1g1r", "Disable 1G1R (one-game-one-ROM) filtering")
+	.option("--no-metadata", "Skip metadata generation")
 	.option("--verify-hashes", "Generate and verify SHA-1/CRC32 hashes", false)
 	.option("--convert-chd", "Convert disc images to CHD format", false)
 	.option("--scrape", "Scrape artwork after download", false)
@@ -687,8 +689,15 @@ async function run(
 	// ─────────────────────────────────────────────────────────────────────────────
 
 	if (!romsOnly) {
-		const biosSummary = await downloadBios(biosDir, downloadOptions)
-		allBiosResults.push(...biosSummary.completed, ...biosSummary.failed)
+		let shouldDownloadBios = true
+		if (!nonInteractive) {
+			shouldDownloadBios = await promptConfirmBiosDownload()
+		}
+
+		if (shouldDownloadBios) {
+			const biosSummary = await downloadBios(biosDir, downloadOptions)
+			allBiosResults.push(...biosSummary.completed, ...biosSummary.failed)
+		}
 	}
 
 	// ─────────────────────────────────────────────────────────────────────────────
@@ -757,12 +766,17 @@ async function run(
 		// Handle scrape options interactively
 		let shouldScrape = options.scrape
 		let scrapeMedia = options.scrapeMedia
+		let generateMetadata = options.metadata
 
-		if (!nonInteractive && !shouldScrape) {
-			const scrapeChoice = await promptScrapeOptions(savedPrefs)
-			shouldScrape = scrapeChoice.scrape
-			if (shouldScrape) {
-				scrapeMedia = scrapeChoice.media.join(",")
+		if (!nonInteractive) {
+			generateMetadata = await promptMetadataOptions()
+
+			if (!shouldScrape) {
+				const scrapeChoice = await promptScrapeOptions(savedPrefs)
+				shouldScrape = scrapeChoice.scrape
+				if (shouldScrape) {
+					scrapeMedia = scrapeChoice.media.join(",")
+				}
 			}
 		}
 
@@ -810,7 +824,7 @@ async function run(
 			...(languagePriority ? { languagePriority } : {}),
 			diskProfile,
 			enable1G1R: options["1g1r"],
-			generateMetadata: options.metadata,
+			generateMetadata,
 			verifyHashes: options.verifyHashes,
 		} as Parameters<typeof downloadRoms>[2])
 

@@ -208,6 +208,32 @@ export async function promptScrapeOptions(
 }
 
 /**
+ * Prompt user to confirm BIOS download
+ */
+export async function promptConfirmBiosDownload(): Promise<boolean> {
+	const response = await prompts({
+		type: "confirm",
+		name: "confirm",
+		message: "Download BIOS files?",
+		initial: true,
+	})
+	return response.confirm === true
+}
+
+/**
+ * Prompt user for metadata generation
+ */
+export async function promptMetadataOptions(): Promise<boolean> {
+	const response = await prompts({
+		type: "confirm",
+		name: "metadata",
+		message: "Generate metadata files (JSON sidecars)?",
+		initial: true,
+	})
+	return response.metadata === true
+}
+
+/**
  * Handle Ctrl+C gracefully
  */
 export function setupPromptHandlers(): void {
