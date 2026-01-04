@@ -4,6 +4,7 @@
 
 import pLimit from "p-limit"
 import ora, { type Ora } from "ora"
+import { log } from "./logger.js"
 
 export interface ParallelResult<T> {
 	success: T[]
@@ -37,6 +38,9 @@ let logLock = Promise.resolve()
  * Uses a mutex to prevent concurrent log operations from interfering.
  */
 export function spinnerSafeLog(message: string): void {
+	// Also log to pino for structured logging
+	log.parallel.debug(message)
+
 	if (activeSpinner) {
 		// Queue this log operation to prevent race conditions
 		logLock = logLock.then(

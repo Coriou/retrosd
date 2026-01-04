@@ -21,6 +21,7 @@ import { fetch as undiciFetch, Agent } from "undici"
 import { downloadFile, HTTP_AGENT } from "./download.js"
 import { loadMetadata } from "./metadata.js"
 import { ui } from "./ui.js"
+import { log } from "./logger.js"
 
 /**
  * Conservative agent for ScreenScraper to avoid rate limiting
@@ -483,11 +484,7 @@ async function searchScreenScraper(
 					await sleep(baseRetryDelayMs * attempt)
 					continue
 				}
-				if (options.verbose) {
-					console.error(
-						`[ScreenScraper] HTTP ${response.status}: ${response.statusText} for ${romFilename}`,
-					)
-				}
+				log.scrape.warn({ status: response.status, romFilename }, "ScreenScraper HTTP error")
 				return { error: normalizeScreenScraperError(raw) }
 			}
 
@@ -495,9 +492,7 @@ async function searchScreenScraper(
 			try {
 				data = JSON.parse(raw)
 			} catch {
-				if (options.verbose) {
-					console.error(`[ScreenScraper] Invalid JSON for ${romFilename}:`, raw)
-				}
+				log.scrape.warn({ romFilename, raw: raw.slice(0, 200) }, "ScreenScraper invalid JSON")
 				return { error: normalizeScreenScraperError(raw) }
 			}
 
@@ -510,20 +505,13 @@ async function searchScreenScraper(
 					await sleep(baseRetryDelayMs * attempt)
 					continue
 				}
-				if (options.verbose) {
-					console.error(
-						`[ScreenScraper] API Error for ${romFilename}:`,
-						data.response.error,
-					)
-				}
+				log.scrape.warn({ romFilename, apiError: data.response.error }, "ScreenScraper API error")
 				return { error: errorMessage }
 			}
 
 			const game = data.response?.jeu
 			if (!game) {
-				if (options.verbose) {
-					console.log(`[ScreenScraper] No game found for ${romFilename}`)
-				}
+				log.scrape.debug({ romFilename }, "game not found on ScreenScraper")
 				return { error: "Game not found on ScreenScraper" }
 			}
 
@@ -667,11 +655,7 @@ async function downloadMedia(
 						result.contentType.includes("text/html") ||
 						result.contentType.includes("application/json")
 					) {
-						if (verbose) {
-							console.error(
-								`[Download] Invalid content-type: ${result.contentType} for ${url}`,
-							)
-						}
+						log.scrape.debug({ contentType: result.contentType, url }, "invalid content-type")
 						unlinkSync(destPath)
 						await sleep(baseRetryDelayMs * (attempt + 1))
 						continue
@@ -681,39 +665,24 @@ async function downloadMedia(
 				// Validate the downloaded file
 				const isValid = await validateMediaFile(destPath)
 				if (!isValid) {
-					if (verbose) {
-						console.error(
-							`[Download] Invalid file content (HTML/JSON error), retrying...`,
-						)
-					}
+					log.scrape.debug({ destPath }, "invalid file content, retrying")
 					await sleep(baseRetryDelayMs * (attempt + 1))
 					continue
 				}
 
-				if (verbose) {
-					console.log(`[Download] ✓ ${destPath}`)
-				}
+
+				log.scrape.debug({ destPath }, "download complete")
 				return true
 			} else if (result.statusCode === 404) {
 				// Not found, don't retry
-				if (verbose) {
-					console.error(`[Download] 404 Not Found: ${url}`)
-				}
+				log.scrape.debug({ url }, "404 not found")
 				return false
 			} else {
 				// Other error
-				if (verbose && attempt < maxRetries - 1) {
-					console.log(
-						`[Download] Error: ${result.error || result.statusCode}, retrying...`,
-					)
-				}
+				log.scrape.debug({ error: result.error, statusCode: result.statusCode }, "download error, retrying")
 			}
 		} catch (err) {
-			if (verbose && attempt === maxRetries - 1) {
-				console.error(
-					`[Download] ✗ Failed to download ${url}: ${err instanceof Error ? err.message : String(err)}`,
-				)
-			}
+			log.scrape.warn({ url, error: err instanceof Error ? err.message : String(err) }, "download failed")
 			if (attempt < maxRetries - 1) {
 				await sleep(baseRetryDelayMs * (attempt + 1))
 			}
