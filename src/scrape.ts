@@ -8,6 +8,7 @@ import {
 	mkdirSync,
 	readFileSync,
 	writeFileSync,
+	readdirSync,
 	openSync,
 	readSync,
 	closeSync,
@@ -872,7 +873,6 @@ async function downloadMediaForGame(
 	game: ScreenScraperGame,
 	baseName: string,
 	mediaDir: string,
-	systemId: number,
 	options: ScrapeOptions,
 	schedule?: DownloadScheduler,
 ): Promise<MediaDownloadResult> {
@@ -895,27 +895,13 @@ async function downloadMediaForGame(
 
 	mkdirSync(mediaDir, { recursive: true })
 
-	const baseUrl = "https://api.screenscraper.fr/api2"
-	const commonParams = new URLSearchParams({
-		devid: options.devId || ENV_DEV_ID,
-		devpassword: options.devPassword || ENV_DEV_PASSWORD,
-		ssid: options.username || "",
-		sspassword: options.password || "",
-		systemeid: systemId.toString(),
-		jeuid: game.id,
-	})
-
 	const downloadTasks: Array<Promise<void>> = []
 
 	if (wantsBox && game.media.boxFront) {
-		const format = game.media.boxFront.format
+		const format = game.media.boxFront.format || "png"
 		const ext = format.startsWith(".") ? format : `.${format}`
 		const boxPath = join(mediaDir, `${baseName}-box${ext}`)
-
-		// Construct mediaJeu.php URL
-		const params = new URLSearchParams(commonParams)
-		params.set("media", "box-2D")
-		const url = `${baseUrl}/mediaJeu.php?${params.toString()}`
+		const url = game.media.boxFront.url
 
 		downloadTasks.push(
 			run(async () => {
@@ -943,14 +929,10 @@ async function downloadMediaForGame(
 	}
 
 	if (wantsSS && game.media.screenshot) {
-		const format = game.media.screenshot.format
+		const format = game.media.screenshot.format || "png"
 		const ext = format.startsWith(".") ? format : `.${format}`
 		const ssPath = join(mediaDir, `${baseName}-screenshot${ext}`)
-
-		// Construct mediaJeu.php URL
-		const params = new URLSearchParams(commonParams)
-		params.set("media", "ss")
-		const url = `${baseUrl}/mediaJeu.php?${params.toString()}`
+		const url = game.media.screenshot.url
 
 		downloadTasks.push(
 			run(async () => {
@@ -978,14 +960,10 @@ async function downloadMediaForGame(
 	}
 
 	if (wantsVideo && game.media.video) {
-		const format = game.media.video.format
+		const format = game.media.video.format || "mp4"
 		const ext = format.startsWith(".") ? format : `.${format}`
 		const videoPath = join(mediaDir, `${baseName}-video${ext}`)
-
-		// Construct mediaVideoJeu.php URL
-		const params = new URLSearchParams(commonParams)
-		params.set("media", "video")
-		const url = `${baseUrl}/mediaVideoJeu.php?${params.toString()}`
+		const url = game.media.video.url
 
 		downloadTasks.push(
 			run(async () => {
@@ -1054,7 +1032,6 @@ export async function scrapeRom(
 		lookup.game,
 		lookup.baseName,
 		mediaDir,
-		lookup.systemId,
 		options,
 	)
 
@@ -1240,7 +1217,6 @@ export async function scrapeSystem(
 						lookup.game,
 						lookup.baseName,
 						mediaDir,
-						lookup.systemId,
 						options,
 						downloadLimit,
 					)
@@ -1310,9 +1286,6 @@ export async function scrapeSystem(
  * Generate EmulationStation gamelist.xml
  */
 export function generateGamelist(systemDir: string, system: string): string {
-	const { readdirSync, existsSync } = require("node:fs")
-	const { join } = require("node:path")
-
 	const files = readdirSync(systemDir)
 	const mediaDir = join(systemDir, "media")
 

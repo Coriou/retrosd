@@ -157,6 +157,56 @@ export async function promptFilter(
 }
 
 /**
+ * Prompt user for scraping options
+ */
+export async function promptScrapeOptions(
+	savedPrefs?: UserPreferences,
+): Promise<{ scrape: boolean; media: string[] }> {
+	const scrapeResponse = await prompts({
+		type: "confirm",
+		name: "scrape",
+		message: "Scrape artwork from ScreenScraper?",
+		initial: savedPrefs?.scrape ?? false,
+	})
+
+	if (!scrapeResponse.scrape) {
+		return { scrape: false, media: [] }
+	}
+
+	const savedMedia = savedPrefs?.scrapeMedia ?? ["box"]
+	const mediaResponse = await prompts({
+		type: "multiselect",
+		name: "media",
+		message: "Select media to download",
+		choices: [
+			{
+				title: "Box Art (2D)",
+				value: "box",
+				selected: savedMedia.includes("box"),
+			},
+			{
+				title: "Screenshot",
+				value: "screenshot",
+				selected: savedMedia.includes("screenshot"),
+			},
+			{
+				title: "Video",
+				value: "video",
+				selected: savedMedia.includes("video"),
+			},
+		],
+		hint: "- Space to select. Return to submit",
+		instructions: false,
+		min: 1,
+	})
+
+	return {
+		scrape: true,
+		media: mediaResponse.media as string[],
+	}
+}
+
+/**
  * Handle Ctrl+C gracefully
  */
 export function setupPromptHandlers(): void {

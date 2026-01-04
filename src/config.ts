@@ -18,6 +18,11 @@ const ConfigSchema = z.object({
 	defaultSystems: z.array(z.string()).optional(),
 	includePrerelease: z.boolean().default(false),
 	includeUnlicensed: z.boolean().default(false),
+	// Scraper credentials
+	scrapeUsername: z.string().optional(),
+	scrapePassword: z.string().optional(),
+	scrapeDevId: z.string().optional(),
+	scrapeDevPassword: z.string().optional(),
 })
 
 export type Config = z.infer<typeof ConfigSchema>
@@ -31,23 +36,32 @@ const DEFAULT_CONFIG: Config = {
 }
 
 /**
- * Load configuration from ~/.brickrc (JSON format)
+ * Load configuration from .retrosdrc (JSON format)
+ * Checks current directory first, then home directory
  */
 export function loadConfig(): Config {
-	const configPath = join(homedir(), ".brickrc")
+	const paths = [
+		join(process.cwd(), ".retrosdrc"),
+		join(process.cwd(), ".retrosdrc.json"),
+		join(homedir(), ".retrosdrc"),
+		join(homedir(), ".retrosdrc.json"),
+		// Legacy support
+		join(homedir(), ".brickrc"),
+	]
 
-	if (!existsSync(configPath)) {
-		return DEFAULT_CONFIG
+	for (const path of paths) {
+		if (existsSync(path)) {
+			try {
+				const raw = readFileSync(path, "utf-8")
+				const parsed = JSON.parse(raw) as unknown
+				return ConfigSchema.parse(parsed)
+			} catch {
+				// Continue to next path if invalid
+			}
+		}
 	}
 
-	try {
-		const raw = readFileSync(configPath, "utf-8")
-		const parsed = JSON.parse(raw) as unknown
-		return ConfigSchema.parse(parsed)
-	} catch {
-		// Invalid config, use defaults
-		return DEFAULT_CONFIG
-	}
+	return DEFAULT_CONFIG
 }
 
 export { DEFAULT_CONFIG }

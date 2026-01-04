@@ -23,6 +23,7 @@ import {
 	promptSources,
 	promptSystems,
 	promptFilter,
+	promptScrapeOptions,
 	setupPromptHandlers,
 } from "../prompts.js"
 import { loadPreferences, updatePreferences } from "../preferences.js"
@@ -82,6 +83,16 @@ program
 	.option("--no-metadata", "Skip metadata generation", false)
 	.option("--verify-hashes", "Generate and verify SHA-1/CRC32 hashes", false)
 	.option("--convert-chd", "Convert disc images to CHD format", false)
+	.option("--scrape", "Scrape artwork after download", false)
+	.option("--username <user>", "ScreenScraper username")
+	.option("--password <pass>", "ScreenScraper password")
+	.option("--dev-id <id>", "ScreenScraper developer ID")
+	.option("--dev-password <pass>", "ScreenScraper developer password")
+	.option(
+		"--scrape-media <list>",
+		"Media to scrape: box,screenshot,video",
+		"box",
+	)
 	.action(run)
 
 // Add scan command
@@ -468,6 +479,13 @@ interface CliArgs {
 	metadata: boolean // Note: commander converts --no-metadata to false
 	verifyHashes: boolean
 	convertChd: boolean
+	// Scrape options
+	scrape: boolean
+	username?: string
+	password?: string
+	devId?: string
+	devPassword?: string
+	scrapeMedia?: string
 }
 
 async function run(
@@ -619,32 +637,41 @@ async function run(
 			filter = filterChoice.custom
 		}
 
+		// Handle scrape options interactively
+		let shouldScrape = options.scrape
+		let scrapeMedia = options.scrapeMedia
+
+		if (!nonInteractive && !shouldScrape) {
+			const scrapeChoice = await promptScrapeOptions(savedPrefs)
+			shouldScrape = scrapeChoice.scrape
+			if (shouldScrape) {
+				scrapeMedia = scrapeChoice.media.join(",")
+			}
+		}
+
 		// Save user selections for next run
 		if (!nonInteractive) {
+			const prefsUpdate: any = {
+				confirmRomDownload: true,
+				sources: selectedSources,
+				systems: selectedEntries.map(e => e.key),
+				scrape: shouldScrape,
+			}
+
+			if (shouldScrape && scrapeMedia) {
+				prefsUpdate.scrapeMedia = scrapeMedia.split(",")
+			}
+
 			// Build preferences update, clearing the conflicting filter setting
 			if (filter !== undefined) {
 				// Custom filter: save it and signal clearing preset
-				updatePreferences(target, {
-					confirmRomDownload: true,
-					sources: selectedSources,
-					systems: selectedEntries.map(e => e.key),
-					customFilter: filter,
-				})
+				prefsUpdate.customFilter = filter
 			} else if (preset !== undefined) {
 				// Preset: save it and signal clearing custom filter
-				updatePreferences(target, {
-					confirmRomDownload: true,
-					sources: selectedSources,
-					systems: selectedEntries.map(e => e.key),
-					preset,
-				})
-			} else {
-				updatePreferences(target, {
-					confirmRomDownload: true,
-					sources: selectedSources,
-					systems: selectedEntries.map(e => e.key),
-				})
+				prefsUpdate.preset = preset
 			}
+
+			updatePreferences(target, prefsUpdate)
 		}
 
 		// Download ROMs
@@ -683,6 +710,43 @@ async function run(
 					ui.info(
 						`${system}: ${result.converted} converted, ${result.skipped} skipped, ${result.failed} failed`,
 					)
+				}
+			}
+		}
+
+		// Scrape artwork if requested
+		if (shouldScrape && !dryRun) {
+			ui.header("Scraping Artwork")
+			const { scrapeSystem, generateGamelist } = await import("../scrape.js")
+			const { writeFileSync } = await import("node:fs")
+
+			const mediaList = (scrapeMedia || "box").split(",")
+			const scrapeOptions = {
+				boxArt: mediaList.includes("box"),
+				screenshot: mediaList.includes("screenshot"),
+				video: mediaList.includes("video"),
+				username: options.username ?? config.scrapeUsername,
+				password: options.password ?? config.scrapePassword,
+				devId: options.devId ?? config.scrapeDevId,
+				devPassword: options.devPassword ?? config.scrapeDevPassword,
+				verbose: options.verbose,
+				quiet: options.quiet,
+				concurrency: options.jobs ? parseInt(options.jobs) : undefined,
+			}
+
+			for (const entry of selectedEntries) {
+				const systemDir = join(romsDir, entry.destDir)
+				if (existsSync(systemDir)) {
+					ui.info(`Scraping ${entry.key}...`)
+					const result = await scrapeSystem(systemDir, entry.key, scrapeOptions)
+
+					if (result.success > 0) {
+						const gamelist = generateGamelist(systemDir, entry.key)
+						writeFileSync(join(systemDir, "gamelist.xml"), gamelist, "utf8")
+						if (!options.quiet) {
+							ui.success(`Generated gamelist.xml for ${entry.key}`)
+						}
+					}
 				}
 			}
 		}

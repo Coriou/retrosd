@@ -18,6 +18,8 @@ export interface UserPreferences {
 	preset?: RegionPreset
 	customFilter?: string
 	confirmRomDownload?: boolean
+	scrape?: boolean
+	scrapeMedia?: string[]
 	updatedAt?: string
 }
 
@@ -95,6 +97,12 @@ export function updatePreferences(
 	const confirmRomDownload = getValue("confirmRomDownload")
 	if (confirmRomDownload !== undefined)
 		merged.confirmRomDownload = confirmRomDownload
+
+	const scrape = getValue("scrape")
+	if (scrape !== undefined) merged.scrape = scrape
+
+	const scrapeMedia = getValue("scrapeMedia")
+	if (scrapeMedia !== undefined) merged.scrapeMedia = scrapeMedia
 
 	const sources = getValue("sources")
 	if (sources !== undefined) merged.sources = sources

@@ -187,6 +187,7 @@ retrosd export /path/to/sdcard -o collection.json
 - Generates EmulationStation-compatible gamelists
 - Supports multiple media types and regions
 - Intelligent caching to avoid redundant API calls
+- **Can be chained** with the main download command
 
 **Why it matters:**
 
@@ -198,16 +199,20 @@ retrosd export /path/to/sdcard -o collection.json
 **Usage:**
 
 ```bash
-# Scrape artwork for Game Boy
+# Standalone scraping
 retrosd scrape /path/to/sdcard --systems=GB
 
-# With ScreenScraper account for faster speeds
-retrosd scrape /path/to/sdcard --systems=GB,GBA \
-  --username your_username --password your_password
+# Chain with download (Download -> Organize -> Scrape)
+retrosd --systems=GB --preset=english --scrape /path/to/sdcard
 
-# Media types: box-2d (front/back), screenshot, video
+# With credentials (can also be stored in config file)
+retrosd --systems=GB --scrape \
+  --username user --password pass \
+  /path/to/sdcard
+
+# Select specific media types
 retrosd scrape /path/to/sdcard --systems=GB \
-  --media=box-2d,screenshot
+  --media=box-2d,screenshot,video
 ```
 
 **Supported systems:**
@@ -290,6 +295,28 @@ retrosd --systems=GB --include-prerelease --include-unlicensed /path/to/sdcard
 
 ---
 
+## ⚙️ Configuration
+
+You can store your preferences and credentials in a configuration file to avoid typing them every time. RetroSD looks for `.retrosdrc` or `.retrosdrc.json` in the current directory or your home directory.
+
+**Recommendation:** We strongly recommend storing your ScreenScraper credentials here to enable artwork scraping without passing sensitive information via command-line arguments.
+
+**Example `.retrosdrc`:**
+
+```json
+{
+	"jobs": 8,
+	"retryCount": 5,
+	"includePrerelease": false,
+	"scrapeUsername": "your_username",
+	"scrapePassword": "your_password",
+	"scrapeDevId": "your_dev_id",
+	"scrapeDevPassword": "your_dev_password"
+}
+```
+
+---
+
 ## Installation
 
 ### Prerequisites
@@ -331,15 +358,16 @@ retrosd --version
 ### First Time Setup
 
 ```bash
-# Download and organize GB/GBA games with metadata
-retrosd --systems=GB,GBA --preset=english --verify-hashes /path/to/sdcard
+# Download, organize, and scrape artwork for GB/GBA games
+retrosd --systems=GB,GBA --preset=english --verify-hashes --scrape /path/to/sdcard
 
 # This will:
 # 1. Download BIOS files for each system
 # 2. Download only English-region ROMs
 # 3. Apply 1G1R (one version per game)
 # 4. Generate metadata with hashes
-# 5. Create organized Bios/ and Roms/ folders
+# 5. Download box art and generate gamelists
+# 6. Create organized Bios/ and Roms/ folders
 ```
 
 ### Maintain Your Collection
@@ -487,7 +515,7 @@ For better scraping performance:
 - Register at [screenscraper.fr](https://www.screenscraper.fr)
 - Free accounts get ~2 requests/second
 - Paid accounts get faster limits and higher priority
-- Use `--username` and `--password` flags for authentication
+- Store credentials in `.retrosdrc` to avoid typing them every time
 
 ---
 
