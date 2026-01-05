@@ -63,6 +63,25 @@ function truncate(str: string | null, maxLen: number): string {
 	return str.slice(0, maxLen - 1) + "…"
 }
 
+function formatList(
+	values: string[] | null | undefined,
+	maxItems: number,
+): string {
+	if (!values || values.length === 0) return "—"
+	return values.slice(0, maxItems).join(", ")
+}
+
+function formatFlags(result: SearchResult): string {
+	const flags: string[] = []
+	if (result.isBeta) flags.push("Beta")
+	if (result.isDemo) flags.push("Demo")
+	if (result.isProto) flags.push("Proto")
+	if (result.isUnlicensed) flags.push("Unlicensed")
+	if (result.isHack) flags.push("Hack")
+	if (result.isHomebrew) flags.push("Homebrew")
+	return flags.length > 0 ? flags.join(" · ") : "—"
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Subcomponents
 // ─────────────────────────────────────────────────────────────────────────────
@@ -80,32 +99,36 @@ function ResultRow({ result, isSelected }: ResultRowProps) {
 		<Text color={colors.muted}>{symbols.bullet}</Text>
 	)
 
-	// Region badges
 	const regionText = result.regions?.slice(0, 2).join(", ") ?? ""
+	const languageText = result.languages?.slice(0, 2).join(", ") ?? ""
+	const regionLangText =
+		regionText && languageText
+			? `${regionText} · ${languageText}`
+			: regionText || languageText
 
 	return (
 		<Box gap={1}>
 			{statusIcon}
-			<Box width={6}>
+			<Box width={8}>
 				{isSelected ? (
 					<Text bold color="black" backgroundColor={colors.primary}>
-						{result.system}
+						{truncate(result.system, 8)}
 					</Text>
 				) : (
-					<Text bold>{result.system}</Text>
+					<Text bold>{truncate(result.system, 8)}</Text>
 				)}
 			</Box>
-			<Box width={45}>
+			<Box width={39}>
 				{isSelected ? (
 					<Text color="black" backgroundColor={colors.primary}>
-						{truncate(result.title ?? result.filename, 44)}
+						{truncate(result.title ?? result.filename, 38)}
 					</Text>
 				) : (
-					<Text>{truncate(result.title ?? result.filename, 44)}</Text>
+					<Text>{truncate(result.title ?? result.filename, 38)}</Text>
 				)}
 			</Box>
-			<Box width={12}>
-				<Text color={colors.muted}>{regionText}</Text>
+			<Box width={16}>
+				<Text color={colors.muted}>{truncate(regionLangText, 15)}</Text>
 			</Box>
 			<Box width={10}>
 				<Text color={colors.muted}>{formatSize(result.size)}</Text>
@@ -113,6 +136,52 @@ function ResultRow({ result, isSelected }: ResultRowProps) {
 			{result.isBeta && <Text color={colors.warning}>[β]</Text>}
 			{result.isDemo && <Text color={colors.warning}>[Demo]</Text>}
 			{result.isProto && <Text color={colors.warning}>[Proto]</Text>}
+			{result.isUnlicensed && <Text color={colors.warning}>[Unl]</Text>}
+			{result.isHack && <Text color={colors.warning}>[Hack]</Text>}
+			{result.isHomebrew && <Text color={colors.warning}>[HB]</Text>}
+		</Box>
+	)
+}
+
+interface ResultDetailsProps {
+	result: SearchResult
+}
+
+function ResultDetails({ result }: ResultDetailsProps) {
+	return (
+		<Box flexDirection="column" marginTop={1}>
+			<Box gap={1}>
+				<Text color={colors.muted}>File:</Text>
+				<Text>{truncate(result.filename, 80)}</Text>
+			</Box>
+			<Box gap={2}>
+				<Box gap={1}>
+					<Text color={colors.muted}>Source:</Text>
+					<Text>{result.source}</Text>
+				</Box>
+				<Box gap={1}>
+					<Text color={colors.muted}>Regions:</Text>
+					<Text>{formatList(result.regions, 4)}</Text>
+				</Box>
+				<Box gap={1}>
+					<Text color={colors.muted}>Lang:</Text>
+					<Text>{formatList(result.languages, 4)}</Text>
+				</Box>
+				<Box gap={1}>
+					<Text color={colors.muted}>Rev:</Text>
+					<Text>{result.revision ?? "—"}</Text>
+				</Box>
+			</Box>
+			<Box gap={1}>
+				<Text color={colors.muted}>Flags:</Text>
+				<Text color={colors.warning}>{formatFlags(result)}</Text>
+			</Box>
+			{result.isLocal && result.localPath && (
+				<Box gap={1}>
+					<Text color={colors.muted}>Local:</Text>
+					<Text color={colors.success}>{truncate(result.localPath, 80)}</Text>
+				</Box>
+			)}
 		</Box>
 	)
 }
@@ -239,6 +308,11 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 	const localCount = useMemo(
 		() => results.filter(r => r.isLocal).length,
 		[results],
+	)
+
+	const selectedResult = useMemo(
+		() => results[selectedIndex] ?? null,
+		[results, selectedIndex],
 	)
 
 	// Subtitle for header
@@ -368,6 +442,7 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 							isSelected={index === selectedIndex}
 						/>
 					))}
+					{selectedResult && <ResultDetails result={selectedResult} />}
 				</Section>
 			) : (
 				!isLoading &&

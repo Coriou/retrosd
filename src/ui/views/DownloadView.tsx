@@ -14,12 +14,7 @@ import { useDownloader } from "../hooks/useDownloader.js"
 import { ProgressBar } from "../components/ProgressBar.js"
 import { Spinner } from "../components/Spinner.js"
 import { Header, Section } from "../components/Header.js"
-import {
-	Success,
-	Error as ErrorMsg,
-	Warning,
-	Info,
-} from "../components/Message.js"
+import { Success, Error as ErrorMsg, Warning } from "../components/Message.js"
 import { colors, symbols } from "../theme.js"
 import type {
 	DownloaderOptions,
@@ -117,7 +112,7 @@ interface SystemSummaryProps {
 	status: DownloadViewState["systems"] extends Map<string, infer T> ? T : never
 }
 
-function SystemSummary({ system, status: sys }: SystemSummaryProps) {
+function SystemSummary({ system: _system, status: sys }: SystemSummaryProps) {
 	const icon =
 		sys.status === "complete" ? (
 			<Text color={colors.success}>{symbols.success}</Text>

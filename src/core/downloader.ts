@@ -11,11 +11,11 @@
  * - Region/language filtering
  */
 
-import { existsSync, mkdirSync, statSync, unlinkSync } from "node:fs"
+import { existsSync, statSync } from "node:fs"
 import { mkdir } from "node:fs/promises"
 import { join } from "node:path"
 import pLimit from "p-limit"
-import { Agent, fetch as undiciFetch } from "undici"
+import { fetch as undiciFetch } from "undici"
 
 import { BackpressureController } from "../backpressure.js"
 import { downloadFile, anyExtensionExists, HTTP_AGENT } from "../download.js"
@@ -32,7 +32,6 @@ import {
 	manifestKey,
 	setManifestEntry,
 	setManifestDirectoryLastModified,
-	headRemoteMeta,
 	parseListing,
 	parseDirectoryLastModified,
 	type ManifestFile,
@@ -77,14 +76,6 @@ function resolveBackpressure(
 				maxConcurrent: Math.min(jobs, 8),
 			}
 	}
-}
-
-function formatBytes(bytes: number): string {
-	if (bytes === 0) return "0 B"
-	const k = 1024
-	const sizes = ["B", "KB", "MB", "GB", "TB"]
-	const i = Math.floor(Math.log(bytes) / Math.log(k))
-	return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`
 }
 
 function normalizeLastModified(value: string | undefined): string | undefined {
@@ -581,8 +572,8 @@ async function* downloadRomEntry(
 
 	// Extraction phase
 	if (entry.extract && successFiles.length > 0) {
-		let extractedCount = 0
-		let extractFailed = 0
+		let _extractedCount = 0
+		let _extractFailed = 0
 		const extractLimit = pLimit(Math.min(8, options.jobs))
 
 		const extractPromises = successFiles.map(filename =>
@@ -609,7 +600,7 @@ async function* downloadRomEntry(
 				})
 
 				if (result.success) {
-					extractedCount++
+					_extractedCount++
 					pushEvent({
 						type: "extract",
 						id: downloadId,
@@ -618,7 +609,7 @@ async function* downloadRomEntry(
 						status: "complete",
 					})
 				} else {
-					extractFailed++
+					_extractFailed++
 					pushEvent({
 						type: "extract",
 						id: downloadId,

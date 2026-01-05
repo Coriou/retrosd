@@ -14,6 +14,7 @@ import { Header, Section } from "../components/Header.js"
 import { Success, Info } from "../components/Message.js"
 import { colors, symbols } from "../theme.js"
 import type { AppResult } from "../App.js"
+import { computeScanStats, type ScanStats } from "../../scan/stats.js"
 
 function inferCatalogSystemKey(
 	systemDir: string,
@@ -70,6 +71,7 @@ interface ScanResult {
 	systems: Map<string, { count: number; bytes: number }>
 	totalRoms: number
 	totalBytes: number
+	stats?: ScanStats
 	dbStats?: {
 		catalogTotalRoms: number
 		catalogSystems: number
@@ -184,6 +186,8 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 					}
 				}
 
+				const stats = computeScanStats(manifest)
+
 				let dbStats: ScanResult["dbStats"] = null
 				if (options.dbPath && existsSync(options.dbPath)) {
 					try {
@@ -203,7 +207,7 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 					}
 				}
 
-				setResult({ systems, totalRoms, totalBytes, dbStats })
+				setResult({ systems, totalRoms, totalBytes, stats, dbStats })
 				setIsScanning(false)
 
 				const elapsed = Date.now() - startTimeRef.current
@@ -292,6 +296,89 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 							</Box>
 						</Box>
 					</Box>
+
+					{result.stats && (
+						<>
+							<Section title="Coverage">
+								<Box flexDirection="column">
+									<Text color={colors.muted}>
+										Metadata: {result.stats.coverage.withMetadata}/
+										{result.stats.totals.roms} (
+										{(
+											(result.stats.coverage.withMetadata /
+												Math.max(1, result.stats.totals.roms)) *
+											100
+										).toFixed(1)}
+										% )
+									</Text>
+									<Text color={colors.muted}>
+										SHA-1: {result.stats.coverage.hasSha1}/
+										{result.stats.totals.roms} (
+										{(
+											(result.stats.coverage.hasSha1 /
+												Math.max(1, result.stats.totals.roms)) *
+											100
+										).toFixed(1)}
+										% )
+									</Text>
+									<Text color={colors.muted}>
+										CRC32: {result.stats.coverage.hasCrc32}/
+										{result.stats.totals.roms} (
+										{(
+											(result.stats.coverage.hasCrc32 /
+												Math.max(1, result.stats.totals.roms)) *
+											100
+										).toFixed(1)}
+										% )
+									</Text>
+								</Box>
+							</Section>
+
+							<Section title="Regions">
+								<Box flexDirection="column">
+									{result.stats.regions.overall.length === 0 && (
+										<Text color={colors.muted}>No region data found</Text>
+									)}
+									{result.stats.regions.overall.map(r => (
+										<Text key={r.region}>
+											<Text bold>{r.region}</Text>
+											<Text color={colors.muted}>: {r.count}</Text>
+										</Text>
+									))}
+								</Box>
+							</Section>
+
+							<Section title="Variants">
+								<Box flexDirection="column">
+									<Text color={colors.muted}>
+										Titles with variants:{" "}
+										{result.stats.duplicates.titlesWithVariants}
+									</Text>
+									{result.stats.duplicates.topTitles.length > 0 && (
+										<Box flexDirection="column" marginTop={1}>
+											{result.stats.duplicates.topTitles.map(t => (
+												<Text key={t.title}>
+													<Text bold>{t.title}</Text>
+													<Text color={colors.muted}>: {t.variants}</Text>
+												</Text>
+											))}
+										</Box>
+									)}
+								</Box>
+							</Section>
+
+							<Section title="Tags">
+								<Box flexDirection="column">
+									<Text color={colors.muted}>
+										Prerelease: {result.stats.tags.prerelease}
+										{"  "}Unlicensed: {result.stats.tags.unlicensed}
+										{"  "}Hacks: {result.stats.tags.hack}
+										{"  "}Homebrew: {result.stats.tags.homebrew}
+									</Text>
+								</Box>
+							</Section>
+						</>
+					)}
 
 					{options.dbPath && (
 						<Box marginTop={1}>

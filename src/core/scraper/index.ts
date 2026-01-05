@@ -26,7 +26,6 @@ import { GameCache } from "./cache.js"
 import { migrateJsonCacheIfExists } from "./migration.js"
 import {
 	searchScreenScraper,
-	validateCredentials,
 	resolveDevCredentials,
 	isDevCredentialError,
 } from "./api.js"
@@ -35,7 +34,6 @@ import {
 	SCREENSCRAPER_SYSTEMS,
 	isRomFilename,
 	type ScreenScraperGame,
-	type GameCacheEntry,
 } from "./types.js"
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -200,6 +198,7 @@ async function* scrapeSystem(
 		Math.min(lanes, Math.floor(options.downloadConcurrency ?? lanes)),
 	)
 	const lookupLimit = pLimit(lanes)
+	const downloadLimit = pLimit(downloadConcurrency)
 
 	// Track results
 	let success = 0
@@ -351,45 +350,49 @@ async function* scrapeSystem(
 				found: true,
 			})
 
-			// Download media
-			const mediaResult = await downloadMediaForGame(
-				game,
-				baseName,
-				mediaDir,
-				{
-					boxArt: options.boxArt,
-					screenshot: options.screenshot,
-					video: options.video,
-					overwrite: options.overwrite,
-					verbose: options.verbose,
-					username: options.username,
-					password: options.password,
-					devId: options.devId,
-					devPassword: options.devPassword,
-				},
-				// onMediaStart
-				mediaType => {
-					pushEvent({
-						type: "download",
-						romFilename: filename,
-						system,
-						gameTitle: game!.name,
-						mediaType,
-						status: "start",
-					})
-				},
-				// onMediaComplete
-				(mediaType, result) => {
-					pushEvent({
-						type: "download",
-						romFilename: filename,
-						system,
-						gameTitle: game!.name,
-						mediaType,
-						status: result.ok ? "complete" : "error",
-						...(result.ok ? {} : { error: result.error ?? "Download failed" }),
-					})
-				},
+			// Download media (separately limited from lookups)
+			const mediaResult = await downloadLimit(() =>
+				downloadMediaForGame(
+					game,
+					baseName,
+					mediaDir,
+					{
+						boxArt: options.boxArt,
+						screenshot: options.screenshot,
+						video: options.video,
+						overwrite: options.overwrite,
+						verbose: options.verbose,
+						username: options.username,
+						password: options.password,
+						devId: options.devId,
+						devPassword: options.devPassword,
+					},
+					// onMediaStart
+					mediaType => {
+						pushEvent({
+							type: "download",
+							romFilename: filename,
+							system,
+							gameTitle: game!.name,
+							mediaType,
+							status: "start",
+						})
+					},
+					// onMediaComplete
+					(mediaType, result) => {
+						pushEvent({
+							type: "download",
+							romFilename: filename,
+							system,
+							gameTitle: game!.name,
+							mediaType,
+							status: result.ok ? "complete" : "error",
+							...(result.ok
+								? {}
+								: { error: result.error ?? "Download failed" }),
+						})
+					},
+				),
 			)
 
 			// Emit completion

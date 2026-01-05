@@ -29,6 +29,10 @@ export interface RomMetadata {
 	datVersion?: string
 	/** File hashes */
 	hash?: FileHash
+	/** Local file size when metadata was last updated (for incremental hashing) */
+	fileSize?: number
+	/** Local file mtimeMs when metadata was last updated (for incremental hashing) */
+	fileMtimeMs?: number
 	/** When this metadata was generated */
 	createdAt: string
 	/** When this metadata was last updated */
@@ -122,6 +126,7 @@ export function updateMetadataHash(
 	destDir: string,
 	filename: string,
 	hash: FileHash,
+	fingerprint?: { fileSize: number; fileMtimeMs: number },
 ): boolean {
 	const existing = loadMetadata(destDir, filename)
 	if (!existing) {
@@ -129,6 +134,10 @@ export function updateMetadataHash(
 	}
 
 	existing.hash = hash
+	if (fingerprint) {
+		existing.fileSize = fingerprint.fileSize
+		existing.fileMtimeMs = fingerprint.fileMtimeMs
+	}
 	existing.updatedAt = new Date().toISOString()
 	saveMetadata(destDir, filename, existing)
 	return true
@@ -154,6 +163,7 @@ export async function generateMetadataForExisting(
 		succeed: (text: string) => void
 	}
 	const { readdirSync, existsSync } = await import("node:fs")
+	const { statSync } = await import("node:fs")
 	const { join } = await import("node:path")
 	const { hashFile } = await import("./hash.js")
 	const { ui } = await import("./ui.js")
@@ -257,6 +267,9 @@ export async function generateMetadataForExisting(
 			}
 
 			try {
+				const stat = statSync(romPath)
+				const fingerprint = { fileSize: stat.size, fileMtimeMs: stat.mtimeMs }
+
 				// Generate hash if requested
 				let hash: FileHash | undefined
 				if (options.withHashes) {
@@ -270,6 +283,8 @@ export async function generateMetadataForExisting(
 					systemInfo.source,
 					hash,
 				)
+				metadata.fileSize = fingerprint.fileSize
+				metadata.fileMtimeMs = fingerprint.fileMtimeMs
 
 				// Save metadata
 				saveMetadata(systemDir, filename, metadata)

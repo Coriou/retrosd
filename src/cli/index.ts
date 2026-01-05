@@ -38,6 +38,7 @@ import {
 	verifyCollection,
 	exportManifest,
 } from "../collection.js"
+import { computeScanStats } from "../scan/stats.js"
 import { convertRomsInDirectory } from "../convert.js"
 import type {
 	Source,
@@ -624,6 +625,43 @@ program
 		if (options.output) {
 			exportManifest(manifest, options.output)
 			ui.success(`Manifest exported to ${options.output}`)
+		}
+
+		// Rich stats summary (pure computation; keeps scan fast)
+		if (!options.quiet) {
+			const stats = computeScanStats(manifest)
+			ui.info("")
+			ui.header("Scan Summary")
+			ui.info(
+				`Coverage: metadata ${stats.coverage.withMetadata}/${stats.totals.roms} (${(
+					(stats.coverage.withMetadata / Math.max(1, stats.totals.roms)) *
+					100
+				).toFixed(
+					1,
+				)}%)  sha1 ${stats.coverage.hasSha1}/${stats.totals.roms}  crc32 ${stats.coverage.hasCrc32}/${stats.totals.roms}`,
+			)
+
+			if (stats.regions.overall.length > 0) {
+				ui.info(
+					`Regions: ${stats.regions.overall
+						.map(r => `${r.region} ${r.count}`)
+						.join(", ")}`,
+				)
+			}
+
+			ui.info(
+				`Tags: prerelease ${stats.tags.prerelease}  unlicensed ${stats.tags.unlicensed}  hacks ${stats.tags.hack}  homebrew ${stats.tags.homebrew}`,
+			)
+			ui.info(
+				`Variants: ${stats.duplicates.titlesWithVariants} titles with >1 variant`,
+			)
+			if (stats.duplicates.topTitles.length > 0) {
+				ui.info(
+					`Top variants: ${stats.duplicates.topTitles
+						.map(t => `${t.title} (${t.variants})`)
+						.join(", ")}`,
+				)
+			}
 		}
 
 		// Reconcile scanned ROM files into local_roms for accurate search local status

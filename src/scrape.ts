@@ -635,7 +635,7 @@ async function validateMediaFile(filePath: string): Promise<boolean> {
 async function downloadMedia(
 	url: string,
 	destPath: string,
-	verbose?: boolean,
+	_verbose?: boolean,
 ): Promise<boolean> {
 	const maxRetries = 3
 	const baseRetryDelayMs = 2000

@@ -7,7 +7,7 @@ import { readdirSync, statSync, existsSync } from "node:fs"
 import { join } from "node:path"
 import { writeFileSync } from "node:fs"
 import { hashFile, verifyFile, type FileHash } from "./hash.js"
-import { loadMetadata, parseRomFilename } from "./metadata.js"
+import { loadMetadata, parseRomFilename, saveMetadata } from "./metadata.js"
 import type {
 	CollectionManifest,
 	SystemCollection,
@@ -104,17 +104,37 @@ async function scanSystemDirectory(
 				}
 			: parseRomFilename(filename, systemName, systemInfo.source)
 
-		// Get hashes if requested
+		// Get hashes if requested (incremental when metadata has a matching fingerprint)
 		let hash: FileHash | undefined
 		if (options.includeHashes) {
-			try {
-				hash = await hashFile(filePath)
-				ui.debug(`Hashed ${filename}: ${hash.sha1}`, options.verbose)
-			} catch (err) {
-				ui.debug(
-					`Failed to hash ${filename}: ${err instanceof Error ? err.message : String(err)}`,
-					options.verbose,
-				)
+			const canReuseFromMetadata = Boolean(
+				metadata?.hash &&
+				metadata.fileSize === size &&
+				metadata.fileMtimeMs === stat.mtimeMs,
+			)
+
+			if (canReuseFromMetadata) {
+				hash = metadata!.hash
+				ui.debug(`Reused hashes for ${filename}`, options.verbose)
+			} else {
+				try {
+					hash = await hashFile(filePath)
+					ui.debug(`Hashed ${filename}: ${hash.sha1}`, options.verbose)
+
+					if (metadata) {
+						metadata.hash = hash
+						metadata.fileSize = size
+						metadata.fileMtimeMs = stat.mtimeMs
+						metadata.updatedAt = new Date().toISOString()
+						saveMetadata(systemDir, filename, metadata)
+						ui.debug(`Updated metadata hashes for ${filename}`, options.verbose)
+					}
+				} catch (err) {
+					ui.debug(
+						`Failed to hash ${filename}: ${err instanceof Error ? err.message : String(err)}`,
+						options.verbose,
+					)
+				}
 			}
 		}
 

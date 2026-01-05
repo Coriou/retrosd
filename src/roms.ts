@@ -1103,6 +1103,7 @@ export async function downloadRomEntry(
 
 			for (const romFilename of extractedRoms) {
 				const romPath = join(destDir, romFilename)
+				const stat = statSync(romPath)
 
 				// Generate hash if verification is enabled
 				let hash: { sha1: string; crc32: string; size: number } | undefined
@@ -1120,6 +1121,8 @@ export async function downloadRomEntry(
 					entry.source,
 					hash,
 				)
+				metadata.fileSize = stat.size
+				metadata.fileMtimeMs = stat.mtimeMs
 				saveMetadata(destDir, romFilename, metadata)
 				metadataCount++
 			}

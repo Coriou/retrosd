@@ -66,7 +66,6 @@ export function ConvertView({ options, onComplete }: ConvertViewProps) {
 	const { exit } = useApp()
 	const [isRunning, setIsRunning] = useState(true)
 	const [currentSystem, setCurrentSystem] = useState<string | null>(null)
-	const [currentFile, setCurrentFile] = useState<string | null>(null)
 	const [results, setResults] = useState<SystemResult[]>([])
 	const [error, setError] = useState<string | null>(null)
 	const startTimeRef = useRef(Date.now())
@@ -115,7 +114,6 @@ export function ConvertView({ options, onComplete }: ConvertViewProps) {
 
 				setIsRunning(false)
 				setCurrentSystem(null)
-				setCurrentFile(null)
 
 				const totals = systemResults.reduce(
 					(acc, r) => ({

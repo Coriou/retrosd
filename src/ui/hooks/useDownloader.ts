@@ -78,7 +78,6 @@ export function useDownloader(
 			}
 
 			setState(prev => {
-				const newState = { ...prev }
 				const systems = new Map(prev.systems)
 				const activeDownloads = new Map(prev.activeDownloads)
 				const overall = { ...prev.overall }

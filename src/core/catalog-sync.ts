@@ -12,7 +12,7 @@
  */
 
 import { fetch as undiciFetch, Agent } from "undici"
-import { eq, and, inArray } from "drizzle-orm"
+import { eq, and } from "drizzle-orm"
 import type { RomEntry, Source } from "../types.js"
 import { ROM_ENTRIES } from "../roms.js"
 import {
@@ -22,14 +22,7 @@ import {
 } from "../roms.js"
 import { parseRomFilenameParts } from "../romname.js"
 import { getDb, getSqlite, type DbClient } from "../db/index.js"
-import {
-	remoteRoms,
-	romMetadata,
-	syncState,
-	type NewRemoteRom,
-	type NewRomMetadata,
-	type NewSyncState,
-} from "../db/schema.js"
+import { remoteRoms, syncState } from "../db/schema.js"
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -532,7 +525,7 @@ export async function getSyncStates(dbPath: string) {
  * Get ROM count per system from local catalog
  */
 export async function getCatalogStats(dbPath: string) {
-	const db = getDb(dbPath)
+	getDb(dbPath)
 	const sqlite = getSqlite()
 
 	const stats = sqlite
