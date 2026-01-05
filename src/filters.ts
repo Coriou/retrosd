@@ -152,9 +152,45 @@ export interface FilenameFilterOptions {
 	includeLanguageCodes?: string[]
 	/** Drop files that match any of these parsed language codes (e.g. es). */
 	excludeLanguageCodes?: string[]
+	/**
+	 * When language tags are missing from the filename, infer language codes from
+	 * unambiguous region codes (e.g. us -> en, fr -> fr). This only applies when
+	 * include/exclude language filters are used.
+	 */
+	inferLanguageCodes?: boolean
 	includeList?: Set<string>
 	excludeList?: Set<string>
 	exclusion?: ExclusionOptions
+}
+
+const IMPLIED_LANGUAGES_BY_REGION: Readonly<Record<string, readonly string[]>> =
+	Object.freeze({
+		us: ["en"],
+		uk: ["en"],
+		au: ["en"],
+		jp: ["ja"],
+		fr: ["fr"],
+		de: ["de"],
+		it: ["it"],
+		sp: ["es"],
+		br: ["pt"],
+		cn: ["zh"],
+		tw: ["zh"],
+		kr: ["ko"],
+		ru: ["ru"],
+		pl: ["pl"],
+	})
+
+function inferLanguagesFromRegionCodes(
+	regionCodes: readonly string[],
+): string[] {
+	const inferred = new Set<string>()
+	for (const regionCode of regionCodes) {
+		const langs = IMPLIED_LANGUAGES_BY_REGION[regionCode]
+		if (!langs) continue
+		for (const lang of langs) inferred.add(lang)
+	}
+	return inferred.size > 0 ? Array.from(inferred) : []
 }
 
 export interface PriorityOptions {
@@ -264,7 +300,7 @@ export function loadFilterList(filePath: string): Set<string> {
 	return out
 }
 
-function shouldExclude(filename: string, rules: ExclusionOptions): boolean {
+function _shouldExclude(filename: string, rules: ExclusionOptions): boolean {
 	if (
 		rules.includePrerelease &&
 		rules.includeUnlicensed &&
@@ -325,6 +361,7 @@ export function applyFilters(
 		options.excludeLanguageCodes,
 		normalizeLanguageCode,
 	)
+	const inferLanguageCodes = options.inferLanguageCodes ?? true
 	const hasTagFilters =
 		!!includeRegionSet ||
 		!!excludeRegionSet ||
@@ -350,17 +387,24 @@ export function applyFilters(
 			if (excludeRegionSet && matchAny(parsed.regionCodes, excludeRegionSet)) {
 				return false
 			}
-			if (
-				includeLanguageSet &&
-				!matchAny(parsed.languages, includeLanguageSet)
-			) {
-				return false
-			}
-			if (
-				excludeLanguageSet &&
-				matchAny(parsed.languages, excludeLanguageSet)
-			) {
-				return false
+			if (includeLanguageSet || excludeLanguageSet) {
+				const effectiveLanguages =
+					inferLanguageCodes && parsed.languages.length === 0
+						? inferLanguagesFromRegionCodes(parsed.regionCodes)
+						: parsed.languages
+
+				if (
+					includeLanguageSet &&
+					!matchAny(effectiveLanguages, includeLanguageSet)
+				) {
+					return false
+				}
+				if (
+					excludeLanguageSet &&
+					matchAny(effectiveLanguages, excludeLanguageSet)
+				) {
+					return false
+				}
 			}
 		}
 

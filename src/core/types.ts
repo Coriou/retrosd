@@ -267,6 +267,13 @@ export interface DownloaderOptions {
 	/** Drop files matching any parsed language code. */
 	excludeLanguageCodes?: string[]
 
+	/**
+	 * When language tags are missing from the filename, infer language codes from
+	 * unambiguous region codes (e.g. us -> en, fr -> fr). Only applies when
+	 * include/exclude language filters are provided.
+	 */
+	inferLanguageCodes?: boolean
+
 	/** Preferred region */
 	preferredRegion?: string
 

@@ -283,6 +283,9 @@ async function* downloadRomEntry(
 				includeHacks: options.includeHacks ?? false,
 				includeHomebrew: options.includeHomebrew ?? false,
 			},
+			...(options.inferLanguageCodes !== undefined
+				? { inferLanguageCodes: options.inferLanguageCodes }
+				: {}),
 			...(options.includeRegionCodes?.length
 				? { includeRegionCodes: options.includeRegionCodes }
 				: {}),

@@ -214,6 +214,14 @@ program
 	)
 	.option("--lang <code>", "Prefer language for 1G1R (en, fr, etc.)")
 	.option(
+		"--lang-scope <mode>",
+		"How to apply --lang: prefer (default), strict (only that lang), fallback (lang then en)",
+	)
+	.option(
+		"--no-lang-infer",
+		"Disable language inference when ROM filenames lack language tags",
+	)
+	.option(
 		"--lang-priority <list>",
 		"Override language priority list for 1G1R (comma-separated)",
 	)
@@ -866,6 +874,7 @@ async function run(
 
 	let includeRegionCodes: string[] | undefined
 	let includeLanguageCodes: string[] | undefined
+	let inferLanguageCodes: boolean | undefined
 
 	let regionPriority = normalizePriorityList(
 		options.regionPriority
@@ -888,6 +897,36 @@ async function run(
 		normalizeLanguageCode,
 		"language priority",
 	)
+
+	// Language filter inference toggle (defaults to true via commander)
+	if (typeof options.langInfer === "boolean") {
+		inferLanguageCodes = options.langInfer
+	}
+
+	// Optional language scope behavior for --lang
+	if (options.langScope) {
+		const scope = String(options.langScope).trim().toLowerCase()
+		const normalizedPreferred = preferredLanguage
+		if (!normalizedPreferred) {
+			if (!quiet)
+				ui.warn("Ignoring --lang-scope because no valid --lang was provided")
+		} else if (scope === "strict") {
+			includeLanguageCodes = [normalizedPreferred]
+			preferredLanguage = normalizedPreferred
+			languagePriority = [normalizedPreferred]
+		} else if (scope === "fallback") {
+			includeLanguageCodes = Array.from(
+				new Set([normalizedPreferred, "en"].filter(Boolean)),
+			)
+			preferredLanguage = normalizedPreferred
+			languagePriority = [normalizedPreferred, "en"].filter(Boolean)
+		} else if (scope !== "prefer") {
+			if (!quiet)
+				ui.warn(
+					`Ignoring unknown --lang-scope value: ${options.langScope} (use prefer|strict|fallback)`,
+				)
+		}
+	}
 
 	// Validate disk profile
 	const validProfiles = ["fast", "balanced", "slow"] as const
@@ -997,6 +1036,10 @@ async function run(
 		}
 		if (savedPrefs.includeLanguageCodes?.length && !includeLanguageCodes) {
 			includeLanguageCodes = savedPrefs.includeLanguageCodes
+		}
+		if (savedPrefs && inferLanguageCodes === undefined) {
+			// Default to inference enabled unless explicitly overridden by CLI.
+			inferLanguageCodes = true
 		}
 
 		let selectedSources: Source[]
@@ -1202,6 +1245,7 @@ async function run(
 				...(excludeList ? { excludeList } : {}),
 				...(includeRegionCodes ? { includeRegionCodes } : {}),
 				...(includeLanguageCodes ? { includeLanguageCodes } : {}),
+				...(inferLanguageCodes !== undefined ? { inferLanguageCodes } : {}),
 				...(preferredRegion ? { preferredRegion } : {}),
 				...(regionPriority ? { regionPriority } : {}),
 				...(preferredLanguage ? { preferredLanguage } : {}),
@@ -1250,6 +1294,7 @@ async function run(
 				...(excludeList ? { excludeList } : {}),
 				...(includeRegionCodes ? { includeRegionCodes } : {}),
 				...(includeLanguageCodes ? { includeLanguageCodes } : {}),
+				...(inferLanguageCodes !== undefined ? { inferLanguageCodes } : {}),
 				...(preferredRegion ? { preferredRegion } : {}),
 				...(regionPriority ? { regionPriority } : {}),
 				...(preferredLanguage ? { preferredLanguage } : {}),

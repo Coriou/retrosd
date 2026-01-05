@@ -342,6 +342,28 @@ retrosd --systems=GB --lang en /path/to/sdcard
 retrosd --systems=GB --lang-priority "en,fr,de" /path/to/sdcard
 ```
 
+**`--lang-scope`** - Control how `--lang` is applied
+
+- `prefer` (default): `--lang` is a tie-breaker for 1G1R selection.
+- `strict`: only keep ROMs matching that language.
+- `fallback`: keep that language when available, otherwise fall back to English (`en`).
+
+```bash
+# French-only pool (still applies 1G1R among remaining candidates)
+retrosd --systems=GB --lang fr --lang-scope strict /path/to/sdcard
+
+# French preferred, but allow English fallback
+retrosd --systems=GB --lang fr --lang-scope fallback /path/to/sdcard
+```
+
+**Language inference (enabled by default):** when a ROM filename has no explicit language tags,
+RetroSD can infer language from unambiguous region codes (e.g. `USA` -> `en`, `France` -> `fr`).
+Disable this if you want only explicitly-tagged language matches:
+
+```bash
+retrosd --systems=GB --lang fr --lang-scope strict --no-lang-infer /path/to/sdcard
+```
+
 ##### Recipe: “EU French → EU English → USA” (FR → EN → US)
 
 If you want the exact fallback chain:
@@ -354,18 +376,18 @@ If you want the exact fallback chain:
 Use 1G1R region + language priority (do **not** rely on the `pal` preset for this, since it whitelists many European country variants and can pull in ES/IT/DE, etc.).
 
 ```bash
-# Pick EU first, but prefer French when EU variants exist
-retrosd --systems=GB --preset=all --lang fr --region-priority "eu,us" /path/to/sdcard
+# Recommended: whitelist the language pool and apply EU -> US fallback
+retrosd --systems=GB --preset=all --region-priority "eu,us" --lang fr --lang-scope fallback /path/to/sdcard
 
-# Equivalent (more explicit): order the full language priority list
-retrosd --systems=GB --preset=all --lang-priority "fr,en" --region-priority "eu,us" /path/to/sdcard
+# Equivalent (explicit): order the full language priority list + fallback pool
+retrosd --systems=GB --preset=all --region-priority "eu,us" --lang fr --lang-scope fallback --lang-priority "fr,en" /path/to/sdcard
 ```
 
 This scales to other languages the same way:
 
 ```bash
 # EU Italian -> EU English -> USA
-retrosd --systems=GB --preset=all --lang it --region-priority "eu,us" /path/to/sdcard
+retrosd --systems=GB --preset=all --region-priority "eu,us" --lang it --lang-scope fallback /path/to/sdcard
 ```
 
 ### Download Features
@@ -445,7 +467,7 @@ retrosd --systems=GB,GBA --preset=english --verify-hashes --scrape /path/to/sdca
 
 # This will:
 # 1. Download BIOS files for each system
-# 2. Download only English-region ROMs
+# 2. Apply the `english` preset (USA/Europe/World/etc. filename tags)
 # 3. Apply 1G1R (one version per game)
 # 4. Generate metadata with hashes
 # 5. Download box art and generate gamelists

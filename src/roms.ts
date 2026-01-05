@@ -689,6 +689,9 @@ export async function downloadRomEntry(
 				includeHacks: options.includeHacks ?? false,
 				includeHomebrew: options.includeHomebrew ?? false,
 			},
+			...(options.inferLanguageCodes !== undefined
+				? { inferLanguageCodes: options.inferLanguageCodes }
+				: {}),
 			...(options.includeRegionCodes?.length
 				? { includeRegionCodes: options.includeRegionCodes }
 				: {}),
@@ -1163,6 +1166,7 @@ export async function downloadRoms(
 		excludeRegionCodes?: string[]
 		includeLanguageCodes?: string[]
 		excludeLanguageCodes?: string[]
+		inferLanguageCodes?: boolean
 		preferredRegion?: string
 		regionPriority?: string[]
 		preferredLanguage?: string

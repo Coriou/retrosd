@@ -126,6 +126,8 @@ export interface CliOptions {
 	region?: string
 	regionPriority?: string
 	lang?: string
+	langScope?: string
+	langInfer?: boolean
 	langPriority?: string
 	update: boolean
 	diskProfile?: DiskProfile
