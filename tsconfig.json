@@ -1,6 +1,8 @@
 {
 	"extends": "@tsconfig/node20/tsconfig.json",
 	"compilerOptions": {
+		"jsx": "react-jsx",
+		"jsxImportSource": "react",
 		"lib": ["es2023"],
 		"module": "nodeNext",
 		"target": "es2022",
@@ -30,6 +32,6 @@
 
 		"forceConsistentCasingInFileNames": true
 	},
-	"include": ["**/*.ts"],
+	"include": ["**/*.ts", "**/*.tsx"],
 	"exclude": ["node_modules", "dist"]
 }

@@ -26,6 +26,7 @@ import {
 	promptSources,
 	promptSystems,
 	promptFilter,
+	promptOneG1RProfile,
 	promptScrapeOptions,
 	promptMetadataOptions,
 	setupPromptHandlers,
@@ -45,7 +46,118 @@ import type {
 	DownloadResult,
 	DiskProfile,
 } from "../types.js"
-import type { ScrapeOptions } from "../scrape.js"
+// Ink UI render functions
+import {
+	renderDownload,
+	renderScrape,
+	runScanView,
+	runVerifyView,
+	runConvertView,
+} from "../ui/renderApp.js"
+import type { ScraperOptions } from "../core/types.js"
+import { generateMetadataForExisting } from "../metadata.js"
+import { flushLogs } from "../logger.js"
+
+async function exitWithCode(code: number): Promise<void> {
+	if (code === 0) return
+	try {
+		await flushLogs()
+	} catch {
+		// Best-effort; never block exiting on log flush failures
+	}
+	process.exitCode = code
+}
+
+async function runScrapePlain(
+	scraperOptions: ScraperOptions,
+	options: { quiet: boolean },
+): Promise<{ failed: number }> {
+	const { scrapeArtwork } = await import("../core/scraper/index.js")
+
+	const quiet = options.quiet
+	const verbose = Boolean(scraperOptions.verbose)
+
+	const systemFailures = new Set<string>()
+	const systemCompleted = new Map<
+		string,
+		{ success: number; failed: number; skipped: number }
+	>()
+
+	for await (const event of scrapeArtwork(scraperOptions)) {
+		switch (event.type) {
+			case "scan": {
+				if (!quiet) {
+					ui.info(`${event.system}: found ${event.romsFound} ROMs`)
+				}
+				break
+			}
+			case "batch-start": {
+				if (!quiet) {
+					ui.info(`${event.system}: scraping ${event.total} ROMs`)
+				}
+				break
+			}
+			case "lookup": {
+				if (!quiet && verbose && !event.found) {
+					ui.warn(`${event.system}: no match for ${event.romFilename}`)
+				}
+				break
+			}
+			case "download": {
+				if (event.status === "error") {
+					ui.warn(
+						`${event.system}: ${event.romFilename} (${event.mediaType}) failed: ${event.error ?? "unknown error"}`,
+					)
+				} else if (!quiet && verbose) {
+					ui.info(
+						`${event.system}: ${event.romFilename} (${event.mediaType}) ${event.status}`,
+					)
+				}
+				break
+			}
+			case "complete": {
+				if (!quiet && verbose) {
+					ui.success(`${event.system}: ${event.romFilename} complete`)
+				}
+				break
+			}
+			case "error": {
+				// System-level errors (unsupported system, missing credentials, etc.)
+				if (!event.romFilename) {
+					if (!systemFailures.has(event.system)) {
+						systemFailures.add(event.system)
+					}
+					ui.error(`${event.system}: ${event.error}`)
+					break
+				}
+
+				ui.error(`${event.system}: ${event.romFilename} failed: ${event.error}`)
+				break
+			}
+			case "batch-complete": {
+				systemCompleted.set(event.system, {
+					success: event.success,
+					failed: event.failed,
+					skipped: event.skipped,
+				})
+				if (!quiet) {
+					ui.info(
+						`${event.system}: ${event.success} scraped, ${event.skipped} skipped, ${event.failed} failed`,
+					)
+				}
+				break
+			}
+		}
+	}
+
+	let failed = 0
+	for (const summary of systemCompleted.values()) {
+		failed += summary.failed
+	}
+	failed += systemFailures.size
+
+	return { failed }
+}
 
 const VERSION = "2.0.0"
 
@@ -66,6 +178,7 @@ program
 	.option("-j, --jobs <number>", "Number of parallel downloads", "4")
 	.option("--bios-only", "Only download BIOS files", false)
 	.option("--roms-only", "Only download ROMs (skip BIOS)", false)
+	.option("--ink", "Use Ink React UI for progress display", false)
 	.option(
 		"--preset <name>",
 		"Filter preset: usa, english, ntsc, pal, japanese, all",
@@ -126,6 +239,15 @@ program
 	)
 	.action(run)
 
+// Add ui-test command for verifying Ink installation
+program
+	.command("ui-test")
+	.description("Test the Ink UI components (development)")
+	.action(async () => {
+		const { runUiTest } = await import("../ui/views/UiTest.js")
+		runUiTest()
+	})
+
 // Add scan command
 program
 	.command("scan")
@@ -135,6 +257,7 @@ program
 	.option("--verbose", "Debug output", false)
 	.option("--hashes", "Compute SHA-1/CRC32 hashes (slower)", false)
 	.option("-o, --output <file>", "Export manifest to JSON file")
+	.option("--ink", "Use Ink React UI for progress display", false)
 	.action(async (target, options) => {
 		setupPromptHandlers()
 
@@ -144,6 +267,22 @@ program
 		}
 
 		const romsDir = join(target, "Roms")
+		const isInteractiveTty = Boolean(process.stdout.isTTY)
+		const useInk = Boolean(options.ink || (isInteractiveTty && !options.quiet))
+
+		// Prefer Ink UI for interactive terminals
+		if (useInk) {
+			const exitCode = await runScanView({
+				romsDir,
+				includeHashes: options.hashes,
+				verbose: options.verbose,
+				quiet: options.quiet,
+				outputFile: options.output,
+			})
+			if (exitCode !== 0) await exitWithCode(exitCode)
+			return
+		}
+
 		const manifest = await scanCollection(romsDir, {
 			includeHashes: options.hashes,
 			verbose: options.verbose,
@@ -163,6 +302,7 @@ program
 	.argument("<target>", "Path to SD card root directory")
 	.option("-q, --quiet", "Minimal output", false)
 	.option("--verbose", "Debug output", false)
+	.option("--ink", "Use Ink React UI for progress display", false)
 	.action(async (target, options) => {
 		setupPromptHandlers()
 
@@ -172,6 +312,19 @@ program
 		}
 
 		const romsDir = join(target, "Roms")
+		const isInteractiveTty = Boolean(process.stdout.isTTY)
+		const useInk = Boolean(options.ink || (isInteractiveTty && !options.quiet))
+
+		if (useInk) {
+			const exitCode = await runVerifyView({
+				romsDir,
+				verbose: options.verbose,
+				quiet: options.quiet,
+			})
+			if (exitCode !== 0) await exitWithCode(exitCode)
+			return
+		}
+
 		const results = await verifyCollection(romsDir, options)
 
 		const invalid = results.filter(r => !r.valid)
@@ -192,6 +345,7 @@ program
 	.option("--delete-originals", "Delete original files after conversion", false)
 	.option("-q, --quiet", "Minimal output", false)
 	.option("--verbose", "Debug output", false)
+	.option("--ink", "Use Ink React UI for progress display", false)
 	.action(async (target, options) => {
 		setupPromptHandlers()
 
@@ -202,6 +356,21 @@ program
 
 		const romsDir = join(target, "Roms")
 		const systems = options.systems ? options.systems.split(",") : ["PS", "MD"]
+		const isInteractiveTty = Boolean(process.stdout.isTTY)
+		const useInk = Boolean(options.ink || (isInteractiveTty && !options.quiet))
+
+		// Prefer Ink UI for interactive terminals
+		if (useInk) {
+			const exitCode = await runConvertView({
+				romsDir,
+				systems: systems.map((s: string) => s.trim()),
+				deleteOriginals: options.deleteOriginals,
+				verbose: options.verbose,
+				quiet: options.quiet,
+			})
+			if (exitCode !== 0) await exitWithCode(exitCode)
+			return
+		}
 
 		ui.header("Converting Disc Images")
 
@@ -344,8 +513,11 @@ program
 	.option("--include-unknown", "Include ROMs with unknown extensions", false)
 	.option("-q, --quiet", "Minimal output", false)
 	.option("--verbose", "Debug output", false)
-	.action(async (target, options) => {
+	.option("--ink", "Use Ink React UI for progress display", false)
+	.action(async (target, options, command) => {
 		setupPromptHandlers()
+		const config = loadConfig()
+		const parentOptions = command.parent?.opts?.() ?? {}
 
 		if (!existsSync(target)) {
 			ui.error(`Directory does not exist: ${target}`)
@@ -353,133 +525,211 @@ program
 		}
 
 		const romsDir = join(target, "Roms")
-		const { scrapeSystem, generateGamelist } = await import("../scrape.js")
-		const { writeFileSync } = await import("node:fs")
 
-		const systems = options.systems
-			? options.systems.split(",").map((s: string) => s.trim())
-			: ["GB", "GBA", "GBC", "FC", "MD", "PS"]
+		const systemsArg = (options.systems ?? parentOptions.systems) as
+			| string
+			| undefined
+		const systems = systemsArg
+			? systemsArg.split(",").map((s: string) => s.trim())
+			: (config.defaultSystems ?? ["GB", "GBA", "GBC", "FC", "MD", "PS"])
 
-		ui.header("Scraping Artwork from ScreenScraper")
-		ui.info(`Media will be saved to: ${romsDir}/<system>/media/`)
+		const scrapeUsername = (options.username ?? parentOptions.username) as
+			| string
+			| undefined
+		const scrapePassword = (options.password ?? parentOptions.password) as
+			| string
+			| undefined
+		const resolvedUsername = (scrapeUsername ?? config.scrapeUsername)?.trim()
+		const resolvedPassword = (scrapePassword ?? config.scrapePassword)?.trim()
+		const hasUserCreds = Boolean(resolvedUsername && resolvedPassword)
 
 		const devId = String(
-			options.devId || process.env["SCREENSCRAPER_DEV_ID"] || "",
+			(options.devId ||
+				parentOptions.devId ||
+				config.scrapeDevId ||
+				process.env["SCREENSCRAPER_DEV_ID"] ||
+				"") as string,
 		).trim()
 		const devPassword = String(
-			options.devPassword || process.env["SCREENSCRAPER_DEV_PASSWORD"] || "",
+			(options.devPassword ||
+				parentOptions.devPassword ||
+				config.scrapeDevPassword ||
+				process.env["SCREENSCRAPER_DEV_PASSWORD"] ||
+				"") as string,
 		).trim()
 		const hasDevCreds = Boolean(devId && devPassword)
-		if (!hasDevCreds && !options.quiet) {
-			ui.warn(
-				"ScreenScraper developer credentials not set. Lookups may fail without --dev-id/--dev-password or SCREENSCRAPER_DEV_ID/SCREENSCRAPER_DEV_PASSWORD.",
-			)
+
+		const isInteractiveTty = Boolean(process.stdout.isTTY)
+		const useInk = Boolean(options.ink || (isInteractiveTty && !options.quiet))
+
+		const scraperOptions: ScraperOptions = {
+			systemDirs: systems.map((s: string) => ({
+				path: join(romsDir, s),
+				system: s,
+			})),
+			boxArt: options.box,
+			screenshot: options.screenshot,
+			video: options.video,
+			...(hasUserCreds
+				? { username: resolvedUsername!, password: resolvedPassword! }
+				: {}),
+			...(hasDevCreds ? { devId, devPassword } : {}),
+			verbose: options.verbose,
+			overwrite: options.overwrite,
+			includeUnknown: options.includeUnknown,
+		}
+
+		// Prefer Ink UI for interactive terminals
+		if (useInk) {
+			const { validateCredentials } = await import("../core/scraper/api.js")
+
+			// Determine thread count based on authentication
+			let maxThreads = 1
+			let maxThreadsKnown = false
+			if (hasUserCreds) {
+				const validation = await validateCredentials(
+					resolvedUsername!,
+					resolvedPassword!,
+					hasDevCreds ? devId : undefined,
+					hasDevCreds ? devPassword : undefined,
+				)
+				if (validation.valid && validation.maxThreads) {
+					maxThreads = validation.maxThreads
+					maxThreadsKnown = true
+				} else {
+					// Validation can fail without dev credentials; use a conservative guess
+					maxThreads = 2
+				}
+			}
+
+			const requestedJobs = parseInt(options.jobs, 10)
+			const requestedConcurrency =
+				Number.isFinite(requestedJobs) && requestedJobs > 0
+					? Math.min(requestedJobs, 16)
+					: undefined
+			scraperOptions.concurrency = requestedConcurrency
+				? maxThreadsKnown
+					? Math.min(requestedConcurrency, maxThreads)
+					: requestedConcurrency
+				: maxThreads
+
+			const requestedDownloadJobs = parseInt(options.downloadJobs, 10)
+			if (Number.isFinite(requestedDownloadJobs) && requestedDownloadJobs > 0) {
+				scraperOptions.downloadConcurrency = Math.min(
+					requestedDownloadJobs,
+					scraperOptions.concurrency,
+				)
+			}
+
+			const rendered = renderScrape(scraperOptions)
+			await rendered.waitUntilExit()
+			const result = rendered.result
+			if (result === null || (result.failed ?? 0) > 0) {
+				await exitWithCode(1)
+				return
+			}
+
+			// Generate gamelist.xml files after scraping
+			if (!options.quiet) {
+				ui.info("Generating gamelist.xml files…")
+			}
+			const { generateGamelist } = await import("../scrape.js")
+			const { writeFileSync } = await import("node:fs")
+			for (const system of systems) {
+				const systemDir = join(romsDir, system.trim())
+				if (!existsSync(systemDir)) {
+					continue
+				}
+				const gamelist = generateGamelist(systemDir, system)
+				writeFileSync(join(systemDir, "gamelist.xml"), gamelist, "utf8")
+			}
+			if (!options.quiet) {
+				ui.success("gamelist.xml generation complete")
+			}
+			return
+		}
+
+		// Plain-text fallback (no Ink). Uses the core generator (no ora).
+		const { validateCredentials } = await import("../core/scraper/api.js")
+
+		ui.header("Scraping Artwork from ScreenScraper")
+		if (!options.quiet) {
+			ui.info(`Media will be saved to: ${romsDir}/<system>/media/`)
 		}
 
 		// Determine thread count based on authentication
-		let maxThreads = 1 // Default for anonymous
+		let maxThreads = 1
 		let maxThreadsKnown = false
-		if (options.username && options.password) {
-			// Try to validate credentials to get exact thread count
-			// But don't fail if validation endpoint requires special dev credentials
-			const { validateCredentials } = await import("../scrape.js")
+		if (hasUserCreds) {
 			const validation = await validateCredentials(
-				options.username,
-				options.password,
+				resolvedUsername!,
+				resolvedPassword!,
 				hasDevCreds ? devId : undefined,
 				hasDevCreds ? devPassword : undefined,
 			)
 			if (validation.valid && validation.maxThreads) {
 				maxThreads = validation.maxThreads
 				maxThreadsKnown = true
-				ui.info(
-					`✓ Authenticated as: ${options.username} (${maxThreads} threads allowed)`,
-				)
-			} else {
-				// Validation failed, but user provided credentials so assume they're valid
-				// Use conservative estimate for authenticated users
-				maxThreads = 2 // Most registered users get at least 2-4 threads
-				ui.info(
-					`✓ Using account: ${options.username} (assuming ${maxThreads} threads)`,
-				)
 				if (!options.quiet) {
 					ui.info(
-						`  Note: Couldn't verify thread count (validation requires dev credentials)`,
+						`✓ Authenticated as: ${resolvedUsername} (${maxThreads} threads allowed)`,
+					)
+				}
+			} else {
+				maxThreads = 2
+				if (!options.quiet) {
+					ui.info(
+						`✓ Using account: ${resolvedUsername} (assuming ${maxThreads} threads)`,
 					)
 				}
 			}
-			console.log()
-		} else {
+		} else if (!options.quiet) {
 			ui.warn(
 				"Tip: Register at screenscraper.fr and use --username/--password for faster scraping",
 			)
-			console.log()
 		}
 
-		// Set concurrency based on user's thread limit
 		const requestedJobs = parseInt(options.jobs, 10)
 		const requestedConcurrency =
 			Number.isFinite(requestedJobs) && requestedJobs > 0
 				? Math.min(requestedJobs, 16)
 				: undefined
-		const concurrency = requestedConcurrency
+		scraperOptions.concurrency = requestedConcurrency
 			? maxThreadsKnown
 				? Math.min(requestedConcurrency, maxThreads)
 				: requestedConcurrency
 			: maxThreads
 
 		const requestedDownloadJobs = parseInt(options.downloadJobs, 10)
-		// Cap download concurrency to thread count to avoid exceeding ScreenScraper limits
-		const downloadConcurrency =
-			Number.isFinite(requestedDownloadJobs) && requestedDownloadJobs > 0
-				? Math.min(requestedDownloadJobs, concurrency)
-				: concurrency
+		if (Number.isFinite(requestedDownloadJobs) && requestedDownloadJobs > 0) {
+			scraperOptions.downloadConcurrency = Math.min(
+				requestedDownloadJobs,
+				scraperOptions.concurrency,
+			)
+		}
 
-		let totalSuccess = 0
-		let totalFailed = 0
-		let totalSkipped = 0
+		const { generateGamelist } = await import("../scrape.js")
+		const { writeFileSync } = await import("node:fs")
 
+		const plainResult = await runScrapePlain(scraperOptions, {
+			quiet: options.quiet || !isInteractiveTty,
+		})
+
+		// Generate gamelist.xml files after scraping
 		for (const system of systems) {
 			const systemDir = join(romsDir, system.trim())
 			if (!existsSync(systemDir)) {
-				ui.warn(`System directory not found: ${system}`)
 				continue
 			}
-
-			const result = await scrapeSystem(systemDir, system, {
-				boxArt: options.box,
-				screenshot: options.screenshot,
-				video: options.video,
-				username: options.username,
-				password: options.password,
-				...(hasDevCreds ? { devId, devPassword } : {}),
-				verbose: options.verbose,
-				quiet: options.quiet,
-				concurrency,
-				downloadConcurrency,
-				overwrite: options.overwrite,
-				includeUnknown: options.includeUnknown,
-			})
-
-			totalSuccess += result.success
-			totalFailed += result.failed
-			totalSkipped += result.skipped
-
-			// Generate gamelist.xml
-			if (result.success > 0) {
-				const gamelist = generateGamelist(systemDir, system)
-				writeFileSync(join(systemDir, "gamelist.xml"), gamelist, "utf8")
-				if (!options.quiet) {
-					ui.success(`Generated gamelist.xml for ${system}`)
-				}
+			const gamelist = generateGamelist(systemDir, system)
+			writeFileSync(join(systemDir, "gamelist.xml"), gamelist, "utf8")
+			if (!options.quiet) {
+				ui.success(`Generated gamelist.xml for ${system}`)
 			}
 		}
 
-		if (!options.quiet) {
-			console.log()
-			ui.info(
-				`Total: ${totalSuccess} scraped, ${totalSkipped} skipped, ${totalFailed} failed`,
-			)
+		if (plainResult.failed > 0) {
+			process.exit(1)
 		}
 	})
 
@@ -493,6 +743,7 @@ interface CliArgs {
 	jobs: string
 	biosOnly: boolean
 	romsOnly: boolean
+	ink: boolean
 	preset?: string
 	filter?: string
 	sources?: string
@@ -613,7 +864,10 @@ async function run(
 		preferredLanguage = undefined
 	}
 
-	const regionPriority = normalizePriorityList(
+	let includeRegionCodes: string[] | undefined
+	let includeLanguageCodes: string[] | undefined
+
+	let regionPriority = normalizePriorityList(
 		options.regionPriority
 			? options.regionPriority
 					.split(",")
@@ -624,7 +878,7 @@ async function run(
 		"region priority",
 	)
 
-	const languagePriority = normalizePriorityList(
+	let languagePriority = normalizePriorityList(
 		options.langPriority
 			? options.langPriority
 					.split(",")
@@ -684,6 +938,7 @@ async function run(
 	// Track results for summary
 	const allBiosResults: DownloadResult[] = []
 	const allRomResults: DownloadResult[] = []
+	const allScrapeResults: DownloadResult[] = []
 
 	// ─────────────────────────────────────────────────────────────────────────────
 	// BIOS Downloads
@@ -709,10 +964,46 @@ async function run(
 		// Load saved preferences for interactive prompts
 		const savedPrefs = loadPreferences(target)
 
+		const baselinePreferredRegion = preferredRegion
+		const baselineRegionPriority = regionPriority
+		const baselinePreferredLanguage = preferredLanguage
+		const baselineLanguagePriority = languagePriority
+
+		// Apply saved 1G1R preferences when not explicitly set via CLI/config
+		if (
+			!options.region &&
+			!options.regionPriority &&
+			savedPrefs.preferredRegion
+		) {
+			const normalized = normalizeRegionCode(savedPrefs.preferredRegion)
+			if (normalized) preferredRegion = normalized
+		}
+		if (
+			!options.lang &&
+			!options.langPriority &&
+			savedPrefs.preferredLanguage
+		) {
+			const normalized = normalizeLanguageCode(savedPrefs.preferredLanguage)
+			if (normalized) preferredLanguage = normalized
+		}
+		if (!options.regionPriority && savedPrefs.regionPriority?.length) {
+			regionPriority = savedPrefs.regionPriority
+		}
+		if (!options.langPriority && savedPrefs.languagePriority?.length) {
+			languagePriority = savedPrefs.languagePriority
+		}
+		if (savedPrefs.includeRegionCodes?.length && !includeRegionCodes) {
+			includeRegionCodes = savedPrefs.includeRegionCodes
+		}
+		if (savedPrefs.includeLanguageCodes?.length && !includeLanguageCodes) {
+			includeLanguageCodes = savedPrefs.includeLanguageCodes
+		}
+
 		let selectedSources: Source[]
 		let selectedEntries: RomEntry[]
 		let preset: RegionPreset | undefined
 		let filter: string | undefined
+		let selectedOneG1RProfile: "default" | "eu-lang-fallback" | undefined
 
 		// Handle sources
 		if (options.sources) {
@@ -721,14 +1012,24 @@ async function run(
 				.map(s => s.trim().replace("-", "-") as Source)
 		} else if (nonInteractive) {
 			ui.info("Skipping ROM downloads (non-interactive, no sources specified).")
-			await printSummary(allBiosResults, allRomResults, dryRun)
+			await printSummary(
+				allBiosResults,
+				allRomResults,
+				allScrapeResults,
+				dryRun,
+			)
 			return
 		} else {
 			// Interactive: prompt for confirmation first
 			const shouldDownloadRoms = await promptConfirmRomDownload(savedPrefs)
 			if (!shouldDownloadRoms) {
 				ui.info("Skipping ROM downloads.")
-				await printSummary(allBiosResults, allRomResults, dryRun)
+				await printSummary(
+					allBiosResults,
+					allRomResults,
+					allScrapeResults,
+					dryRun,
+				)
 				return
 			}
 
@@ -749,7 +1050,12 @@ async function run(
 
 		if (selectedEntries.length === 0) {
 			ui.info("No ROM systems selected.")
-			await printSummary(allBiosResults, allRomResults, dryRun)
+			await printSummary(
+				allBiosResults,
+				allRomResults,
+				allScrapeResults,
+				dryRun,
+			)
 			return
 		}
 
@@ -762,6 +1068,54 @@ async function run(
 			const filterChoice = await promptFilter(savedPrefs)
 			preset = filterChoice.preset
 			filter = filterChoice.custom
+		}
+
+		// Optional 1G1R preference profile (interactive only)
+		const enable1G1R = options["1g1r"]
+		const hasExternalPriorityOverrides =
+			!!options.region ||
+			!!options.lang ||
+			!!options.regionPriority ||
+			!!options.langPriority ||
+			!!config.region ||
+			!!config.lang ||
+			!!config.regionPriority?.length ||
+			!!config.langPriority?.length
+		if (
+			!nonInteractive &&
+			enable1G1R !== false &&
+			!hasExternalPriorityOverrides
+		) {
+			const profile = await promptOneG1RProfile(savedPrefs)
+			if (profile.kind === "eu-lang-fallback") {
+				selectedOneG1RProfile = "eu-lang-fallback"
+				const normalizedPrimary = normalizeLanguageCode(profile.primaryLanguage)
+				if (!normalizedPrimary) {
+					if (!quiet)
+						ui.warn(
+							`Ignoring unknown language code: ${profile.primaryLanguage}`,
+						)
+				} else {
+					// Build allowed pool and tie-break rules:
+					// EU <primary> -> EU EN -> US
+					includeRegionCodes = ["eu", "us"]
+					includeLanguageCodes = Array.from(new Set([normalizedPrimary, "en"]))
+					regionPriority = ["eu", "us"]
+					preferredLanguage = normalizedPrimary
+					languagePriority = [normalizedPrimary, "en"]
+					// Ensure the regex preset doesn't accidentally exclude USA.
+					preset = "all"
+					filter = undefined
+				}
+			} else {
+				selectedOneG1RProfile = "default"
+				includeRegionCodes = undefined
+				includeLanguageCodes = undefined
+				preferredRegion = baselinePreferredRegion
+				regionPriority = baselineRegionPriority
+				preferredLanguage = baselinePreferredLanguage
+				languagePriority = baselineLanguagePriority
+			}
 		}
 
 		// Handle scrape options interactively
@@ -788,6 +1142,24 @@ async function run(
 				scrape: shouldScrape,
 			}
 
+			if (selectedOneG1RProfile === "default") {
+				prefsUpdate.preferredRegion = ""
+				prefsUpdate.regionPriority = []
+				prefsUpdate.preferredLanguage = ""
+				prefsUpdate.languagePriority = []
+				prefsUpdate.includeRegionCodes = []
+				prefsUpdate.includeLanguageCodes = []
+			} else {
+				if (preferredRegion) prefsUpdate.preferredRegion = preferredRegion
+				if (regionPriority) prefsUpdate.regionPriority = regionPriority
+				if (preferredLanguage) prefsUpdate.preferredLanguage = preferredLanguage
+				if (languagePriority) prefsUpdate.languagePriority = languagePriority
+				if (includeRegionCodes)
+					prefsUpdate.includeRegionCodes = includeRegionCodes
+				if (includeLanguageCodes)
+					prefsUpdate.includeLanguageCodes = includeLanguageCodes
+			}
+
 			if (shouldScrape && scrapeMedia) {
 				prefsUpdate.scrapeMedia = scrapeMedia.split(",")
 			}
@@ -805,29 +1177,91 @@ async function run(
 		}
 
 		// Download ROMs
-		const romSummary = await downloadRoms(selectedEntries, romsDir, {
-			...downloadOptions,
-			...(preset !== undefined ? { preset } : {}),
-			...(filter !== undefined ? { filter } : {}),
-			includePrerelease,
-			includeUnlicensed,
-			includeHacks,
-			includeHomebrew,
-			...(includePatterns.length > 0 ? { includePatterns } : {}),
-			...(excludePatterns.length > 0 ? { excludePatterns } : {}),
-			...(includeList ? { includeList } : {}),
-			...(excludeList ? { excludeList } : {}),
-			...(preferredRegion ? { preferredRegion } : {}),
-			...(regionPriority ? { regionPriority } : {}),
-			...(preferredLanguage ? { preferredLanguage } : {}),
-			...(languagePriority ? { languagePriority } : {}),
-			diskProfile,
-			enable1G1R: options["1g1r"],
-			generateMetadata,
-			verifyHashes: options.verifyHashes,
-		} as Parameters<typeof downloadRoms>[2])
+		const isInteractiveTty = Boolean(process.stdout.isTTY)
+		const useInk = options.ink || (isInteractiveTty && !quiet)
 
-		allRomResults.push(...romSummary.completed, ...romSummary.failed)
+		if (useInk) {
+			const inkOptions = {
+				romsDir,
+				entries: selectedEntries,
+				dryRun,
+				verbose,
+				jobs,
+				retryCount: config.retryCount,
+				retryDelay: config.retryDelay,
+				update,
+				...(preset !== undefined ? { preset } : {}),
+				...(filter !== undefined ? { filter } : {}),
+				includePrerelease,
+				includeUnlicensed,
+				includeHacks,
+				includeHomebrew,
+				...(includePatterns.length > 0 ? { includePatterns } : {}),
+				...(excludePatterns.length > 0 ? { excludePatterns } : {}),
+				...(includeList ? { includeList } : {}),
+				...(excludeList ? { excludeList } : {}),
+				...(includeRegionCodes ? { includeRegionCodes } : {}),
+				...(includeLanguageCodes ? { includeLanguageCodes } : {}),
+				...(preferredRegion ? { preferredRegion } : {}),
+				...(regionPriority ? { regionPriority } : {}),
+				...(preferredLanguage ? { preferredLanguage } : {}),
+				...(languagePriority ? { languagePriority } : {}),
+				diskProfile,
+				enable1G1R: options["1g1r"],
+			}
+
+			const rendered = renderDownload(inkOptions)
+			await rendered.waitUntilExit()
+
+			const inkResult = rendered.result
+			if (inkResult) {
+				allRomResults.push({
+					label: `ROM downloads (Ink): ${inkResult.completed} completed, ${inkResult.failed} failed`,
+					success: inkResult.failed === 0,
+					...(inkResult.failed > 0
+						? { error: `${inkResult.failed} downloads failed` }
+						: {}),
+				})
+			}
+
+			if (generateMetadata && !dryRun) {
+				await generateMetadataForExisting(romsDir, {
+					systems: selectedEntries.map(e => e.destDir),
+					withHashes: options.verifyHashes,
+					overwrite: false,
+					verbose,
+					quiet,
+				})
+			}
+		} else {
+			const romSummary = await downloadRoms(selectedEntries, romsDir, {
+				...downloadOptions,
+				// Avoid emitting progress bars when piped to non-TTY output
+				quiet: quiet || !isInteractiveTty,
+				...(preset !== undefined ? { preset } : {}),
+				...(filter !== undefined ? { filter } : {}),
+				includePrerelease,
+				includeUnlicensed,
+				includeHacks,
+				includeHomebrew,
+				...(includePatterns.length > 0 ? { includePatterns } : {}),
+				...(excludePatterns.length > 0 ? { excludePatterns } : {}),
+				...(includeList ? { includeList } : {}),
+				...(excludeList ? { excludeList } : {}),
+				...(includeRegionCodes ? { includeRegionCodes } : {}),
+				...(includeLanguageCodes ? { includeLanguageCodes } : {}),
+				...(preferredRegion ? { preferredRegion } : {}),
+				...(regionPriority ? { regionPriority } : {}),
+				...(preferredLanguage ? { preferredLanguage } : {}),
+				...(languagePriority ? { languagePriority } : {}),
+				diskProfile,
+				enable1G1R: options["1g1r"],
+				generateMetadata,
+				verifyHashes: options.verifyHashes,
+			} as Parameters<typeof downloadRoms>[2])
+
+			allRomResults.push(...romSummary.completed, ...romSummary.failed)
+		}
 
 		// Convert to CHD if requested
 		if (options.convertChd && !dryRun) {
@@ -856,41 +1290,72 @@ async function run(
 
 		// Scrape artwork if requested
 		if (shouldScrape && !dryRun) {
-			ui.header("Scraping Artwork")
-			const { scrapeSystem, generateGamelist } = await import("../scrape.js")
+			const { generateGamelist } = await import("../scrape.js")
 			const { writeFileSync } = await import("node:fs")
 
 			const mediaList = (scrapeMedia || "box").split(",")
-			const scrapeOptions: ScrapeOptions = {
+
+			const username = options.username ?? config.scrapeUsername
+			const password = options.password ?? config.scrapePassword
+			const devId = options.devId ?? config.scrapeDevId
+			const devPassword = options.devPassword ?? config.scrapeDevPassword
+
+			const systemDirs = selectedEntries
+				.map(entry => ({
+					system: entry.key,
+					path: join(romsDir, entry.destDir),
+				}))
+				.filter(({ path }) => existsSync(path))
+
+			const scraperOptions: ScraperOptions = {
+				systemDirs,
 				boxArt: mediaList.includes("box"),
 				screenshot: mediaList.includes("screenshot"),
 				video: mediaList.includes("video"),
 				verbose: options.verbose,
-				quiet: options.quiet,
+				...(username && password ? { username, password } : {}),
+				...(devId && devPassword ? { devId, devPassword } : {}),
+				...(Number.isFinite(jobs) ? { concurrency: jobs } : {}),
 			}
-			const username = options.username ?? config.scrapeUsername
-			if (username) scrapeOptions.username = username
-			const password = options.password ?? config.scrapePassword
-			if (password) scrapeOptions.password = password
-			const devId = options.devId ?? config.scrapeDevId
-			if (devId) scrapeOptions.devId = devId
-			const devPassword = options.devPassword ?? config.scrapeDevPassword
-			if (devPassword) scrapeOptions.devPassword = devPassword
-			if (options.jobs) scrapeOptions.concurrency = parseInt(options.jobs)
 
-			for (const entry of selectedEntries) {
-				const systemDir = join(romsDir, entry.destDir)
-				if (existsSync(systemDir)) {
-					ui.info(`Scraping ${entry.key}...`)
-					const result = await scrapeSystem(systemDir, entry.key, scrapeOptions)
+			const isInteractiveTty = Boolean(process.stdout.isTTY)
+			const useInk = options.ink || (isInteractiveTty && !quiet)
+			if (useInk) {
+				const rendered = renderScrape(scraperOptions)
+				await rendered.waitUntilExit()
+				const result = rendered.result
+				const failed = result?.failed ?? 1
+				const completed = result?.completed ?? 0
+				allScrapeResults.push({
+					label:
+						result === null
+							? "Artwork scrape (Ink): aborted"
+							: `Artwork scrape (Ink): ${completed} processed, ${failed} failed`,
+					success: result !== null && failed === 0,
+					...(result === null
+						? { error: "Scrape aborted (quit before completion)" }
+						: failed > 0
+							? { error: `${failed} scrape errors` }
+							: {}),
+				})
+			} else {
+				const plainResult = await runScrapePlain(scraperOptions, {
+					quiet: quiet || !isInteractiveTty,
+				})
+				allScrapeResults.push({
+					label: `Artwork scrape: ${plainResult.failed} failed`,
+					success: plainResult.failed === 0,
+					...(plainResult.failed > 0
+						? { error: `${plainResult.failed} scrape errors` }
+						: {}),
+				})
+			}
 
-					if (result.success > 0) {
-						const gamelist = generateGamelist(systemDir, entry.key)
-						writeFileSync(join(systemDir, "gamelist.xml"), gamelist, "utf8")
-						if (!options.quiet) {
-							ui.success(`Generated gamelist.xml for ${entry.key}`)
-						}
-					}
+			for (const { system, path } of systemDirs) {
+				const gamelist = generateGamelist(path, system)
+				writeFileSync(join(path, "gamelist.xml"), gamelist, "utf8")
+				if (!options.quiet) {
+					ui.success(`Generated gamelist.xml for ${system}`)
 				}
 			}
 		}
@@ -900,12 +1365,13 @@ async function run(
 	// Summary
 	// ─────────────────────────────────────────────────────────────────────────────
 
-	await printSummary(allBiosResults, allRomResults, dryRun)
+	await printSummary(allBiosResults, allRomResults, allScrapeResults, dryRun)
 }
 
 async function printSummary(
 	biosResults: DownloadResult[],
 	romResults: DownloadResult[],
+	scrapeResults: DownloadResult[],
 	dryRun: boolean,
 ): Promise<void> {
 	ui.header("Summary")
@@ -914,6 +1380,8 @@ async function printSummary(
 	const biosFailed = biosResults.filter(r => !r.success)
 	const romCompleted = romResults.filter(r => r.success)
 	const romFailed = romResults.filter(r => !r.success)
+	const scrapeCompleted = scrapeResults.filter(r => r.success)
+	const scrapeFailed = scrapeResults.filter(r => !r.success)
 
 	if (biosCompleted.length > 0) {
 		ui.summarySection(
@@ -950,7 +1418,28 @@ async function printSummary(
 		)
 	}
 
-	const allSuccess = biosFailed.length === 0 && romFailed.length === 0
+	if (scrapeCompleted.length > 0) {
+		console.log()
+		ui.summarySection(
+			"Artwork Scrape Completed",
+			scrapeCompleted.map(r => r.label),
+			"green",
+		)
+	}
+
+	if (scrapeFailed.length > 0) {
+		console.log()
+		ui.summarySection(
+			"Artwork Scrape Failed",
+			scrapeFailed.map(r => r.label + (r.error ? ` - ${r.error}` : "")),
+			"red",
+		)
+	}
+
+	const allSuccess =
+		biosFailed.length === 0 &&
+		romFailed.length === 0 &&
+		scrapeFailed.length === 0
 	ui.finalStatus(allSuccess)
 
 	if (dryRun) {

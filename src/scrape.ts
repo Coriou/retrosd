@@ -484,7 +484,10 @@ async function searchScreenScraper(
 					await sleep(baseRetryDelayMs * attempt)
 					continue
 				}
-				log.scrape.warn({ status: response.status, romFilename }, "ScreenScraper HTTP error")
+				log.scrape.warn(
+					{ status: response.status, romFilename },
+					"ScreenScraper HTTP error",
+				)
 				return { error: normalizeScreenScraperError(raw) }
 			}
 
@@ -492,7 +495,10 @@ async function searchScreenScraper(
 			try {
 				data = JSON.parse(raw)
 			} catch {
-				log.scrape.warn({ romFilename, raw: raw.slice(0, 200) }, "ScreenScraper invalid JSON")
+				log.scrape.warn(
+					{ romFilename, raw: raw.slice(0, 200) },
+					"ScreenScraper invalid JSON",
+				)
 				return { error: normalizeScreenScraperError(raw) }
 			}
 
@@ -505,7 +511,10 @@ async function searchScreenScraper(
 					await sleep(baseRetryDelayMs * attempt)
 					continue
 				}
-				log.scrape.warn({ romFilename, apiError: data.response.error }, "ScreenScraper API error")
+				log.scrape.warn(
+					{ romFilename, apiError: data.response.error },
+					"ScreenScraper API error",
+				)
 				return { error: errorMessage }
 			}
 
@@ -655,7 +664,10 @@ async function downloadMedia(
 						result.contentType.includes("text/html") ||
 						result.contentType.includes("application/json")
 					) {
-						log.scrape.debug({ contentType: result.contentType, url }, "invalid content-type")
+						log.scrape.debug(
+							{ contentType: result.contentType, url },
+							"invalid content-type",
+						)
 						unlinkSync(destPath)
 						await sleep(baseRetryDelayMs * (attempt + 1))
 						continue
@@ -670,7 +682,6 @@ async function downloadMedia(
 					continue
 				}
 
-
 				log.scrape.debug({ destPath }, "download complete")
 				return true
 			} else if (result.statusCode === 404) {
@@ -679,10 +690,16 @@ async function downloadMedia(
 				return false
 			} else {
 				// Other error
-				log.scrape.debug({ error: result.error, statusCode: result.statusCode }, "download error, retrying")
+				log.scrape.debug(
+					{ error: result.error, statusCode: result.statusCode },
+					"download error, retrying",
+				)
 			}
 		} catch (err) {
-			log.scrape.warn({ url, error: err instanceof Error ? err.message : String(err) }, "download failed")
+			log.scrape.warn(
+				{ url, error: err instanceof Error ? err.message : String(err) },
+				"download failed",
+			)
 			if (attempt < maxRetries - 1) {
 				await sleep(baseRetryDelayMs * (attempt + 1))
 			}
@@ -1036,7 +1053,12 @@ export async function scrapeSystem(
 	skipped: number
 }> {
 	const { readdirSync } = await import("node:fs")
-	const ora = await import("ora")
+	type SpinnerLike = {
+		text: string
+		stop: () => void
+		start: () => void
+		succeed: (text: string) => void
+	}
 
 	const mediaDir = join(systemDir, "media")
 	const files = readdirSync(systemDir)
@@ -1052,14 +1074,17 @@ export async function scrapeSystem(
 	let skipped = 0
 	let devCredentialError: string | null = null
 
-	const spinner = options.quiet
-		? null
-		: ora
-				.default({
-					text: `Scraping ${system}: 0/${total}...`,
-					spinner: "dots",
-				})
-				.start()
+	let spinner: SpinnerLike | null = null
+	if (!options.quiet) {
+		spinner = {
+			text: "",
+			stop: () => {},
+			start: () => {},
+			succeed: (text: string) => {
+				ui.success(text)
+			},
+		}
+	}
 
 	// Initialize cache
 	const cacheFile = join(systemDir, ".screenscraper-cache.json")

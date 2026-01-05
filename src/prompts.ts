@@ -7,6 +7,10 @@ import type { Source, RomEntry, RegionPreset } from "./types.js"
 import { getEntriesBySources } from "./roms.js"
 import type { UserPreferences } from "./preferences.js"
 
+export type OneG1RProfile =
+	| { kind: "default" }
+	| { kind: "eu-lang-fallback"; primaryLanguage: string }
+
 /**
  * Prompt user to confirm ROM download
  */
@@ -155,6 +159,64 @@ export async function promptFilter(
 
 	// Return 'all' explicitly so we can save it
 	return { preset: "all" as RegionPreset }
+}
+
+export async function promptOneG1RProfile(
+	savedPrefs?: UserPreferences,
+): Promise<OneG1RProfile> {
+	const response = await prompts({
+		type: "select",
+		name: "profile",
+		message: "Select 1G1R preference",
+		choices: [
+			{
+				title: "Default (region priority + latest revision)",
+				value: "default",
+			},
+			{
+				title: "EU <language> → EU English → USA (whitelist pool)",
+				value: "eu-lang-fallback",
+			},
+		],
+		initial:
+			savedPrefs?.includeRegionCodes?.includes("eu") &&
+			savedPrefs?.includeRegionCodes?.includes("us") &&
+			savedPrefs?.includeLanguageCodes?.includes("en")
+				? 1
+				: 0,
+	})
+
+	if (response.profile !== "eu-lang-fallback") {
+		return { kind: "default" }
+	}
+
+	const languageResponse = await prompts({
+		type: "select",
+		name: "language",
+		message: "Primary language in Europe",
+		choices: [
+			{ title: "French (fr)", value: "fr" },
+			{ title: "German (de)", value: "de" },
+			{ title: "Italian (it)", value: "it" },
+			{ title: "Spanish (es)", value: "es" },
+			{ title: "Portuguese (pt)", value: "pt" },
+			{ title: "Other…", value: "other" },
+		],
+		initial: 0,
+	})
+
+	let primaryLanguage = languageResponse.language as string
+	if (primaryLanguage === "other") {
+		const customResponse = await prompts({
+			type: "text",
+			name: "code",
+			message: "Enter language code (e.g. fr, it, es)",
+			initial: savedPrefs?.preferredLanguage ?? "",
+		})
+		primaryLanguage = (customResponse.code as string) ?? ""
+	}
+
+	return { kind: "eu-lang-fallback", primaryLanguage }
 }
 
 /**

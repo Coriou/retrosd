@@ -38,7 +38,6 @@ import { extractZip, isZipArchive } from "./extract.js"
 import { ui } from "./ui.js"
 import { writeFileSync, readFileSync } from "node:fs"
 import { runParallel } from "./parallel.js"
-import { createProgressTracker } from "./progress.js"
 import { hashFile } from "./hash.js"
 import { generateMetadata, saveMetadata } from "./metadata.js"
 
@@ -62,13 +61,13 @@ function resolveBackpressure(
 /**
  * Parsed file entry with size information
  */
-interface FileEntry {
+export interface FileEntry {
 	filename: string
 	size: number // bytes, 0 if unknown
 	lastModified?: string // ISO string if parseable
 }
 
-interface RemoteMeta {
+export interface RemoteMeta {
 	size?: number
 	etag?: string
 	lastModified?: string
@@ -82,7 +81,7 @@ interface ManifestEntry {
 	updatedAt: string
 }
 
-interface ManifestFile {
+export interface ManifestFile {
 	version: number
 	entries: Record<string, ManifestEntry>
 	directories?: Record<string, { lastModified?: string; updatedAt: string }>
@@ -115,11 +114,11 @@ const _DEST_DIRS: Record<string, string> = {
 
 const MANIFEST_FILE = ".retrosd-manifest.json"
 
-function manifestKey(destDir: string, filename: string): string {
+export function manifestKey(destDir: string, filename: string): string {
 	return `${destDir}/${filename}`
 }
 
-function loadManifest(romsDir: string): ManifestFile {
+export function loadManifest(romsDir: string): ManifestFile {
 	try {
 		const raw = readFileSync(join(romsDir, MANIFEST_FILE), "utf8")
 		const parsed = JSON.parse(raw) as ManifestFile
@@ -137,7 +136,7 @@ function loadManifest(romsDir: string): ManifestFile {
 	return { version: 1, entries: {}, directories: {} }
 }
 
-function saveManifest(romsDir: string, manifest: ManifestFile): void {
+export function saveManifest(romsDir: string, manifest: ManifestFile): void {
 	try {
 		writeFileSync(
 			join(romsDir, MANIFEST_FILE),
@@ -149,7 +148,7 @@ function saveManifest(romsDir: string, manifest: ManifestFile): void {
 	}
 }
 
-function setManifestEntry(
+export function setManifestEntry(
 	manifest: ManifestFile,
 	destDir: string,
 	filename: string,
@@ -166,7 +165,7 @@ function setManifestEntry(
 	manifest.entries[key] = entry
 }
 
-function setManifestDirectoryLastModified(
+export function setManifestDirectoryLastModified(
 	manifest: ManifestFile,
 	entryKey: string,
 	lastModified: string | undefined,
@@ -179,7 +178,7 @@ function setManifestDirectoryLastModified(
 	manifest.directories[entryKey] = record
 }
 
-async function headRemoteMeta(url: string): Promise<RemoteMeta | null> {
+export async function headRemoteMeta(url: string): Promise<RemoteMeta | null> {
 	try {
 		const res = await undiciFetch(url, {
 			method: "HEAD",
@@ -407,7 +406,7 @@ function normalizeLastModified(value: string | undefined): string | undefined {
 	return dt.toISOString()
 }
 
-function parseDirectoryLastModified(html: string): string | undefined {
+export function parseDirectoryLastModified(html: string): string | undefined {
 	// Look for the "./" row, which Myrient uses to show the directory's last update
 	const tableRow = html.match(
 		/<tr[^>]*>\s*<td[^>]*>\s*<a\s+href="\.\/"[^>]*>\.?\/?<\/a>\s*<\/td>\s*<td[^>]*>\s*[^<]*\s*<\/td>\s*<td[^>]*>\s*([^<]*)\s*<\/td>/im,
@@ -431,7 +430,7 @@ function parseDirectoryLastModified(html: string): string | undefined {
  * Format: <a href="filename.zip">filename.zip</a>  DD-MMM-YYYY HH:MM    SIZE
  * Size can be: "1.2M", "500K", "1.5G", or raw bytes
  */
-function parseListing(html: string, archiveRegex: RegExp): FileEntry[] {
+export function parseListing(html: string, archiveRegex: RegExp): FileEntry[] {
 	const entries: FileEntry[] = []
 
 	const pushRow = (href: string, sizeCell: string, lmCell: string): void => {
@@ -690,6 +689,18 @@ export async function downloadRomEntry(
 				includeHacks: options.includeHacks ?? false,
 				includeHomebrew: options.includeHomebrew ?? false,
 			},
+			...(options.includeRegionCodes?.length
+				? { includeRegionCodes: options.includeRegionCodes }
+				: {}),
+			...(options.excludeRegionCodes?.length
+				? { excludeRegionCodes: options.excludeRegionCodes }
+				: {}),
+			...(options.includeLanguageCodes?.length
+				? { includeLanguageCodes: options.includeLanguageCodes }
+				: {}),
+			...(options.excludeLanguageCodes?.length
+				? { excludeLanguageCodes: options.excludeLanguageCodes }
+				: {}),
 			...(options.includePatterns && options.includePatterns.length > 0
 				? { includePatterns: options.includePatterns }
 				: {}),
@@ -924,15 +935,10 @@ export async function downloadRomEntry(
 			: undefined,
 	})
 
-	// Create progress tracker for this ROM entry
-	const progressTracker = createProgressTracker(entry.label, options.quiet)
-
 	// Download with backpressure
 	const successFiles: string[] = []
 	const failedFiles: Array<{ filename: string; error: string }> = []
-	let _completedCount = 0
 	let bytesDownloaded = 0
-	const startTime = Date.now()
 
 	// Create download tasks
 	const downloadTasks = toDownload.map(item => async () => {
@@ -945,30 +951,17 @@ export async function downloadRomEntry(
 		// Acquire slot (will wait if at capacity)
 		await controller.acquire(estimatedBytes)
 
-		// Start progress tracking for this download
-		const downloadId = `${entry.key}-${filename}`
-		if (expectedSize) {
-			progressTracker.startDownload(downloadId, filename, expectedSize)
-		}
-
 		try {
 			const downloadOptions: {
 				retries: number
 				delay: number
 				quiet: boolean
 				verbose: boolean
-				onProgress?: (current: number, total: number, speed: number) => void
 			} = {
 				retries: options.retryCount,
 				delay: options.retryDelay,
 				quiet: true,
 				verbose: false,
-			}
-
-			if (expectedSize) {
-				downloadOptions.onProgress = (current, total, speed) => {
-					progressTracker.updateDownload(downloadId, current, speed)
-				}
 			}
 
 			const result = await downloadFile(
@@ -985,30 +978,19 @@ export async function downloadRomEntry(
 				if (meta) {
 					setManifestEntry(options.manifest, entry.destDir, filename, meta)
 				}
-				progressTracker.completeDownload(downloadId, true)
 			} else {
 				failedFiles.push({ filename, error: result.error ?? "Unknown error" })
-				progressTracker.completeDownload(downloadId, false)
 			}
 
 			return result
 		} finally {
 			// Always release, even on error
 			controller.release(estimatedBytes, estimatedBytes)
-			_completedCount++
-
-			// Update overall progress
-			const elapsedMs = Date.now() - startTime
-			const speedBps = elapsedMs > 0 ? (bytesDownloaded * 1000) / elapsedMs : 0
-			progressTracker.updateOverall(bytesDownloaded, totalBytes, speedBps)
 		}
 	})
 
 	// Run all tasks (backpressure handles concurrency)
 	await Promise.all(downloadTasks.map(task => task()))
-
-	// Stop progress tracker
-	progressTracker.stop()
 
 	// Extract archives if needed (streaming, non-blocking)
 	if (entry.extract && successFiles.length > 0) {
@@ -1177,6 +1159,10 @@ export async function downloadRoms(
 		excludePatterns?: string[]
 		includeList?: Set<string>
 		excludeList?: Set<string>
+		includeRegionCodes?: string[]
+		excludeRegionCodes?: string[]
+		includeLanguageCodes?: string[]
+		excludeLanguageCodes?: string[]
 		preferredRegion?: string
 		regionPriority?: string[]
 		preferredLanguage?: string

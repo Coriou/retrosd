@@ -212,7 +212,10 @@ retrosd --systems=GB --scrape \
 
 # Select specific media types
 retrosd scrape /path/to/sdcard --systems=GB \
-  --media=box-2d,screenshot,video
+	--screenshot --video
+
+# (Main command) Select specific media types when chaining
+retrosd --systems=GB --scrape --scrape-media box,screenshot,video /path/to/sdcard
 ```
 
 **Supported systems:**
@@ -339,6 +342,32 @@ retrosd --systems=GB --lang en /path/to/sdcard
 retrosd --systems=GB --lang-priority "en,fr,de" /path/to/sdcard
 ```
 
+##### Recipe: “EU French → EU English → USA” (FR → EN → US)
+
+If you want the exact fallback chain:
+
+- Prefer **Europe** releases when available
+- Within Europe, prefer **French** when available
+- Otherwise, fall back to **English**
+- If no Europe release exists, fall back to **USA**
+
+Use 1G1R region + language priority (do **not** rely on the `pal` preset for this, since it whitelists many European country variants and can pull in ES/IT/DE, etc.).
+
+```bash
+# Pick EU first, but prefer French when EU variants exist
+retrosd --systems=GB --preset=all --lang fr --region-priority "eu,us" /path/to/sdcard
+
+# Equivalent (more explicit): order the full language priority list
+retrosd --systems=GB --preset=all --lang-priority "fr,en" --region-priority "eu,us" /path/to/sdcard
+```
+
+This scales to other languages the same way:
+
+```bash
+# EU Italian -> EU English -> USA
+retrosd --systems=GB --preset=all --lang it --region-priority "eu,us" /path/to/sdcard
+```
+
 ### Download Features
 
 - **Metadata generation** happens automatically (disable with `--no-metadata`)
@@ -406,7 +435,7 @@ retrosd --version
 
 ---
 
-## �🚀 Quick Start Guide
+## 🚀 Quick Start Guide
 
 ### First Time Setup
 
@@ -475,10 +504,17 @@ retrosd export /path/to/sdcard -o ~/my-collection.json
 - `romname.ts` - Shared ROM filename parsing (regions, languages, revisions, tags)
 - `collection.ts` - Scan, verify, export operations
 - `convert.ts` - CHD/CSO format conversion
-- `scrape.ts` - ScreenScraper API integration for artwork/media
+- `core/scraper/` - ScreenScraper integration (API, caching, rate limiting, media download)
 - `filters.ts` - Smart 1G1R priority scoring and region filtering
 - `cli/index.ts` - Command-line interface with subcommands
 - `types.ts` - TypeScript interfaces for type safety
+
+**Terminal UI (Ink React):**
+
+- `ui/App.tsx` - Root Ink app + global keybindings (e.g. `q` / `Esc` to quit)
+- `ui/views/*` - Command views (download/scrape/scan/verify/convert)
+- `ui/hooks/*` - Hooks that consume async generators from `core/*`
+- `ui/components/*` - Shared UI primitives (progress bar, spinner, messages)
 
 **Key Features:**
 
@@ -487,6 +523,17 @@ retrosd export /path/to/sdcard -o ~/my-collection.json
 - Smart rate limiting for API calls
 - Backpressure handling for disk I/O
 - Progress tracking and detailed logging
+
+**UI Selection (Ink vs plain output):**
+
+- Ink UI is used automatically when running in an interactive TTY (and `--quiet` is not set)
+- Force Ink UI on with `--ink` (available on the main command and supported subcommands)
+- For scripting / CI, use `--quiet` or pipe output to disable Ink
+
+**Logs (Ink mode):**
+
+- When Ink UI is enabled, RetroSD writes a per-run log file under `./.log/` and shows the path in the UI.
+- Control log verbosity with `LOG_LEVEL_FILE` (recommended values: `info`, `debug`, `trace`).
 
 ---
 

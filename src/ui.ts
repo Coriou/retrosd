@@ -1,8 +1,5 @@
 /**
  * Terminal output helpers with consistent styling
- *
- * Spinner-aware: when an ora spinner is active, all output goes through
- * spinnerSafeLog() to avoid conflicts (flickering, line overwrites).
  */
 
 import chalk from "chalk"

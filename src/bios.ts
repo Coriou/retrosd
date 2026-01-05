@@ -16,6 +16,7 @@ import type {
 } from "./types.js"
 import { downloadFile } from "./download.js"
 import { ui } from "./ui.js"
+import { runParallel } from "./parallel.js"
 
 const BASE_URL =
 	"https://raw.githubusercontent.com/Abdess/retroarch_system/libretro"
@@ -187,42 +188,66 @@ export async function downloadBios(
 
 	const results: DownloadResult[] = []
 
-	// Download regular BIOS files
-	for (const entry of BIOS_ENTRIES) {
-		const destDir = join(biosDir, entry.system)
-		const destFile = entry.rename ?? entry.filename
-		const destPath = join(destDir, destFile)
-		const label = `${entry.system}: ${destFile}`
+	// Download regular BIOS files (parallel)
+	await runParallel(
+		BIOS_ENTRIES,
+		async entry => {
+			const destDir = join(biosDir, entry.system)
+			const destFile = entry.rename ?? entry.filename
+			const destPath = join(destDir, destFile)
+			const label = `${entry.system}: ${destFile}`
 
-		// Check if already exists (resume mode)
-		if (options.resume && existsSync(destPath)) {
-			ui.debug(`Skipping existing: ${label}`, options.verbose)
-			results.push({ label: `${label} (exists)`, success: true, skipped: true })
-			continue
-		}
+			// Check if already exists (resume mode)
+			if (options.resume && existsSync(destPath)) {
+				ui.debug(`Skipping existing: ${label}`, options.verbose)
+				results.push({
+					label: `${label} (exists)`,
+					success: true,
+					skipped: true,
+				})
+				return
+			}
 
-		if (options.dryRun) {
-			ui.info(`[DRY-RUN] Would download: ${label}`)
-			ui.debug(`URL: ${entry.url}`, options.verbose)
-			results.push({ label: `${label} (dry-run)`, success: true })
-			continue
-		}
+			if (options.dryRun) {
+				ui.info(`[DRY-RUN] Would download: ${label}`)
+				ui.debug(`URL: ${entry.url}`, options.verbose)
+				if (entry.fallbackUrl) {
+					ui.debug(`Fallback URL: ${entry.fallbackUrl}`, options.verbose)
+				}
+				results.push({ label: `${label} (dry-run)`, success: true })
+				return
+			}
 
-		const result = await downloadFile(entry.url, destPath, {
-			retries: options.retryCount,
-			delay: options.retryDelay,
+			const attempt = async (url: string) =>
+				downloadFile(url, destPath, {
+					retries: options.retryCount,
+					delay: options.retryDelay,
+					quiet: options.quiet,
+					verbose: options.verbose,
+				})
+
+			let result = await attempt(entry.url)
+			if (!result.success && entry.fallbackUrl) {
+				ui.warn(`Retrying with fallback URL: ${label}`)
+				result = await attempt(entry.fallbackUrl)
+			}
+
+			if (result.success) {
+				ui.success(label)
+				results.push({ label, success: true, skipped: result.skipped })
+			} else {
+				ui.error(
+					`Failed: ${label}` + (result.error ? ` - ${result.error}` : ""),
+				)
+				results.push({ label, success: false, error: result.error })
+			}
+		},
+		{
+			concurrency: Math.max(1, options.jobs),
+			label: "bios",
 			quiet: options.quiet,
-			verbose: options.verbose,
-		})
-
-		if (result.success) {
-			ui.success(label)
-			results.push({ label, success: true, skipped: result.skipped })
-		} else {
-			ui.error(`Failed: ${label}` + (result.error ? ` - ${result.error}` : ""))
-			results.push({ label, success: false, error: result.error })
-		}
-	}
+		},
+	)
 
 	// Handle symlinks
 	for (const entry of SYMLINK_ENTRIES) {

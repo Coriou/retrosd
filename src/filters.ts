@@ -144,6 +144,14 @@ export interface FilenameFilterOptions {
 	exclusionFilter?: RegExp | null
 	includePatterns?: string[]
 	excludePatterns?: string[]
+	/** Only keep files that match at least one of these parsed region codes (e.g. eu, us). */
+	includeRegionCodes?: string[]
+	/** Drop files that match any of these parsed region codes (e.g. jp). */
+	excludeRegionCodes?: string[]
+	/** Only keep files that match at least one of these parsed language codes (e.g. en, fr). */
+	includeLanguageCodes?: string[]
+	/** Drop files that match any of these parsed language codes (e.g. es). */
+	excludeLanguageCodes?: string[]
 	includeList?: Set<string>
 	excludeList?: Set<string>
 	exclusion?: ExclusionOptions
@@ -288,8 +296,90 @@ export function applyFilters(
 	const hasExcludePatterns = excludeRegexes.length > 0
 	const rules = options.exclusion
 
+	const normalizeCodeSet = (
+		values: string[] | undefined,
+		normalizer: (value: string) => string | null,
+	): Set<string> | null => {
+		if (!values || values.length === 0) return null
+		const out = new Set<string>()
+		for (const value of values) {
+			const code = normalizer(value)
+			if (code) out.add(code)
+		}
+		return out.size > 0 ? out : null
+	}
+
+	const includeRegionSet = normalizeCodeSet(
+		options.includeRegionCodes,
+		normalizeRegionCode,
+	)
+	const excludeRegionSet = normalizeCodeSet(
+		options.excludeRegionCodes,
+		normalizeRegionCode,
+	)
+	const includeLanguageSet = normalizeCodeSet(
+		options.includeLanguageCodes,
+		normalizeLanguageCode,
+	)
+	const excludeLanguageSet = normalizeCodeSet(
+		options.excludeLanguageCodes,
+		normalizeLanguageCode,
+	)
+	const hasTagFilters =
+		!!includeRegionSet ||
+		!!excludeRegionSet ||
+		!!includeLanguageSet ||
+		!!excludeLanguageSet
+
+	const matchAny = (values: string[], set: Set<string>): boolean => {
+		for (const value of values) {
+			if (set.has(value)) return true
+		}
+		return false
+	}
+
 	return filenames.filter(filename => {
 		const key = normalizeFilterKey(filename)
+		const needsParsed = hasTagFilters || !!rules
+		const parsed = needsParsed ? parseRomFilenameParts(filename) : null
+
+		if (hasTagFilters && parsed) {
+			if (includeRegionSet && !matchAny(parsed.regionCodes, includeRegionSet)) {
+				return false
+			}
+			if (excludeRegionSet && matchAny(parsed.regionCodes, excludeRegionSet)) {
+				return false
+			}
+			if (
+				includeLanguageSet &&
+				!matchAny(parsed.languages, includeLanguageSet)
+			) {
+				return false
+			}
+			if (
+				excludeLanguageSet &&
+				matchAny(parsed.languages, excludeLanguageSet)
+			) {
+				return false
+			}
+		}
+
+		if (rules && parsed) {
+			if (
+				rules.includePrerelease &&
+				rules.includeUnlicensed &&
+				rules.includeHacks &&
+				rules.includeHomebrew
+			) {
+				// No exclusion by content flags
+			} else {
+				if (!rules.includePrerelease && parsed.flags.prerelease) return false
+				if (!rules.includeUnlicensed && parsed.flags.unlicensed) return false
+				if (!rules.includeHacks && parsed.flags.hack) return false
+				if (!rules.includeHomebrew && parsed.flags.homebrew) return false
+			}
+		}
+
 		if (hasIncludeList && !options.includeList!.has(key)) return false
 		if (hasIncludePatterns && !includeRegexes.some(re => re.test(filename)))
 			return false
@@ -306,7 +396,6 @@ export function applyFilters(
 		if (hasExcludeList && options.excludeList!.has(key)) return false
 		if (hasExcludePatterns && excludeRegexes.some(re => re.test(filename)))
 			return false
-		if (rules && shouldExclude(filename, rules)) return false
 		return true
 	})
 }

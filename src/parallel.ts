@@ -3,7 +3,6 @@
  */
 
 import pLimit from "p-limit"
-import ora, { type Ora } from "ora"
 import { log } from "./logger.js"
 
 export interface ParallelResult<T> {
@@ -25,13 +24,6 @@ export interface ParallelContext {
 	log: (message: string) => void
 }
 
-// Global spinner reference for spinner-safe logging
-let activeSpinner: Ora | null = null
-let spinnerText = ""
-
-// Mutex for serializing log operations to prevent race conditions
-let logLock = Promise.resolve()
-
 /**
  * Log a message while a spinner is active.
  * Stops the spinner, prints the message, then restarts it.
@@ -40,26 +32,7 @@ let logLock = Promise.resolve()
 export function spinnerSafeLog(message: string): void {
 	// Also log to pino for structured logging
 	log.parallel.debug(message)
-
-	if (activeSpinner) {
-		// Queue this log operation to prevent race conditions
-		logLock = logLock.then(
-			() =>
-				new Promise<void>(resolve => {
-					if (activeSpinner) {
-						activeSpinner.stop()
-						console.log(message)
-						activeSpinner.start(spinnerText)
-					} else {
-						console.log(message)
-					}
-					// Small delay to let terminal render
-					setImmediate(resolve)
-				}),
-		)
-	} else {
-		console.log(message)
-	}
+	console.log(message)
 }
 
 /**
@@ -70,30 +43,11 @@ export async function runParallel<T, R>(
 	fn: (item: T, index: number, ctx: ParallelContext) => Promise<R>,
 	options: ParallelOptions,
 ): Promise<ParallelResult<R>> {
-	const { concurrency, label, quiet, noSpinner } = options
+	const { concurrency } = options
 	const limit = pLimit(concurrency)
 
 	const success: R[] = []
 	const failed: { item: unknown; error: string }[] = []
-	let completed = 0
-	const total = items.length
-
-	let spinner: Ora | null = null
-	if (!quiet && !noSpinner && total > 0) {
-		spinnerText = `${label}: 0/${total}`
-		spinner = ora({
-			text: spinnerText,
-			prefixText: "",
-		}).start()
-		activeSpinner = spinner
-	}
-
-	const updateProgress = (): void => {
-		if (spinner) {
-			spinnerText = `${label}: ${completed}/${total}`
-			spinner.text = spinnerText
-		}
-	}
 
 	const ctx: ParallelContext = {
 		log: spinnerSafeLog,
@@ -109,37 +63,11 @@ export async function runParallel<T, R>(
 					item,
 					error: err instanceof Error ? err.message : String(err),
 				})
-			} finally {
-				completed++
-				updateProgress()
 			}
 		}),
 	)
 
 	await Promise.all(tasks)
 
-	// Wait for any pending log operations to complete
-	await logLock
-
-	activeSpinner = null
-
-	if (spinner) {
-		if (failed.length === 0) {
-			spinner.succeed(`${label}: ${total} completed`)
-		} else {
-			spinner.warn(
-				`${label}: ${success.length} completed, ${failed.length} failed`,
-			)
-		}
-	}
-
 	return { success, failed }
-}
-
-/**
- * Create a simple progress spinner for a single operation
- */
-export function createSpinner(text: string, quiet: boolean): Ora | null {
-	if (quiet) return null
-	return ora(text).start()
 }

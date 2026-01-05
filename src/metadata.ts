@@ -147,11 +147,16 @@ export async function generateMetadataForExisting(
 		quiet?: boolean
 	} = {},
 ): Promise<{ created: number; skipped: number; failed: number }> {
+	type SpinnerLike = {
+		text: string
+		stop: () => void
+		start: () => void
+		succeed: (text: string) => void
+	}
 	const { readdirSync, existsSync } = await import("node:fs")
 	const { join } = await import("node:path")
 	const { hashFile } = await import("./hash.js")
 	const { ui } = await import("./ui.js")
-	const ora = await import("ora")
 
 	const systemSourceMap: Record<
 		string,
@@ -192,14 +197,17 @@ export async function generateMetadataForExisting(
 	}
 
 	let processed = 0
-	const spinner = options.quiet
-		? null
-		: ora
-				.default({
-					text: `Processing 0/${totalFiles} ROMs...`,
-					spinner: "dots",
-				})
-				.start()
+	let spinner: SpinnerLike | null = null
+	if (!options.quiet) {
+		spinner = {
+			text: "",
+			stop: () => {},
+			start: () => {},
+			succeed: (text: string) => {
+				ui.success(text)
+			},
+		}
+	}
 
 	for (const system of systemsToProcess) {
 		const systemInfo = systemSourceMap[system]

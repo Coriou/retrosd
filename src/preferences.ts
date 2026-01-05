@@ -17,6 +17,12 @@ export interface UserPreferences {
 	systems?: string[]
 	preset?: RegionPreset
 	customFilter?: string
+	preferredRegion?: string
+	regionPriority?: string[]
+	preferredLanguage?: string
+	languagePriority?: string[]
+	includeRegionCodes?: string[]
+	includeLanguageCodes?: string[]
 	confirmRomDownload?: boolean
 	scrape?: boolean
 	scrapeMedia?: string[]
@@ -109,6 +115,27 @@ export function updatePreferences(
 
 	const systems = getValue("systems")
 	if (systems !== undefined) merged.systems = systems
+
+	const preferredRegion = getValue("preferredRegion")
+	if (preferredRegion !== undefined) merged.preferredRegion = preferredRegion
+
+	const regionPriority = getValue("regionPriority")
+	if (regionPriority !== undefined) merged.regionPriority = regionPriority
+
+	const preferredLanguage = getValue("preferredLanguage")
+	if (preferredLanguage !== undefined)
+		merged.preferredLanguage = preferredLanguage
+
+	const languagePriority = getValue("languagePriority")
+	if (languagePriority !== undefined) merged.languagePriority = languagePriority
+
+	const includeRegionCodes = getValue("includeRegionCodes")
+	if (includeRegionCodes !== undefined)
+		merged.includeRegionCodes = includeRegionCodes
+
+	const includeLanguageCodes = getValue("includeLanguageCodes")
+	if (includeLanguageCodes !== undefined)
+		merged.includeLanguageCodes = includeLanguageCodes
 
 	// Preset and customFilter are mutually exclusive
 	// If one is being set, don't carry over the other from current
