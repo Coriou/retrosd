@@ -668,10 +668,13 @@ program
 		try {
 			if (existsSync(dbPath)) {
 				const { getDb, closeDb } = await import("../db/index.js")
-				const { recordLocalFile } = await import("../db/queries/local-roms.js")
+				const { recordLocalFile, pruneLocalRoms } =
+					await import("../db/queries/local-roms.js")
 				const db = getDb(dbPath)
+				const keepPaths = new Set<string>()
 				for (const sys of manifest.systems) {
 					for (const rom of sys.roms) {
+						keepPaths.add(rom.path)
 						recordLocalFile(db, {
 							localPath: rom.path,
 							fileSize: rom.size,
@@ -682,6 +685,13 @@ program
 						})
 					}
 				}
+
+				// Prune DB entries for files that no longer exist on disk.
+				// This keeps "local" search status accurate after deletions/extraction.
+				pruneLocalRoms(db, {
+					prefix: romsDir,
+					keepPaths,
+				})
 				closeDb()
 			}
 		} catch {

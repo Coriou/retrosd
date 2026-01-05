@@ -34,7 +34,7 @@ import {
 	BackpressureController,
 	BACKPRESSURE_DEFAULTS,
 } from "./backpressure.js"
-import { extractZip, isZipArchive } from "./extract.js"
+import { extractZip, extract7z, isZipArchive, is7zArchive } from "./extract.js"
 import { ui } from "./ui.js"
 import { writeFileSync, readFileSync } from "node:fs"
 import { runParallel } from "./parallel.js"
@@ -309,7 +309,7 @@ export const ROM_ENTRIES: RomEntry[] = [
 		archiveRegex: /\.(zip|7z)$/,
 		extractGlob: "*",
 		label: "PlayStation (Redump)",
-		extract: false,
+		extract: true,
 		destDir: "PS",
 	},
 	{
@@ -319,7 +319,7 @@ export const ROM_ENTRIES: RomEntry[] = [
 		archiveRegex: /\.(zip|7z)$/,
 		extractGlob: "*",
 		label: "Mega CD / Sega CD (Redump)",
-		extract: false,
+		extract: true,
 		destDir: "MD",
 	},
 ]
@@ -1017,60 +1017,68 @@ export async function downloadRomEntry(
 				const expectedSize = getExpectedSize(filename)
 				const url = `${baseUrl}/${entry.remotePath}${encodeURIComponent(filename)}`
 
-				if (existsSync(archivePath) && isZipArchive(filename)) {
-					const attemptExtract = async (): Promise<boolean> => {
-						const result = await extractZip(archivePath, destDir, {
-							extractGlob: entry.extractGlob,
-							deleteArchive: true, // Delete after successful extraction
-							flatten: true, // Extract to root of destDir
-						})
+				if (!existsSync(archivePath)) return
 
-						if (result.success) {
-							extractedCount++
-							return true
-						}
+				const isZip = isZipArchive(filename)
+				const is7z = is7zArchive(filename)
+				if (!isZip && !is7z) return
 
-						ui.debug(
-							`Extract failed for ${filename}: ${result.error ?? "unknown"}`,
-							options.verbose,
-						)
-						return false
+				const attemptExtract = async (): Promise<boolean> => {
+					const result = isZip
+						? await extractZip(archivePath, destDir, {
+								extractGlob: entry.extractGlob,
+								deleteArchive: true,
+								flatten: true,
+							})
+						: await extract7z(archivePath, destDir, {
+								deleteArchive: true,
+							})
+
+					if (result.success) {
+						extractedCount++
+						return true
 					}
 
-					const initialOk = await attemptExtract()
-					if (initialOk) return
-
-					// Retry path: re-download then re-extract
-					try {
-						if (existsSync(archivePath)) {
-							unlinkSync(archivePath)
-						}
-					} catch {
-						// If unlink fails, continue to attempt re-download which will overwrite
-					}
-
-					const redownload = await downloadFile(
-						url,
-						archivePath,
-						{
-							retries: Math.max(2, options.retryCount),
-							delay: options.retryDelay,
-							quiet: true,
-							verbose: false,
-						},
-						expectedSize > 0 ? expectedSize : undefined,
+					ui.debug(
+						`Extract failed for ${filename}: ${result.error ?? "unknown"}`,
+						options.verbose,
 					)
-
-					if (redownload.success) {
-						const retryExtractOk = await attemptExtract()
-						if (retryExtractOk) {
-							recoveredCount++
-							return
-						}
-					}
-
-					extractFailed++
+					return false
 				}
+
+				const initialOk = await attemptExtract()
+				if (initialOk) return
+
+				// Retry path: re-download then re-extract
+				try {
+					if (existsSync(archivePath)) {
+						unlinkSync(archivePath)
+					}
+				} catch {
+					// If unlink fails, continue to attempt re-download which will overwrite
+				}
+
+				const redownload = await downloadFile(
+					url,
+					archivePath,
+					{
+						retries: Math.max(2, options.retryCount),
+						delay: options.retryDelay,
+						quiet: true,
+						verbose: false,
+					},
+					expectedSize > 0 ? expectedSize : undefined,
+				)
+
+				if (redownload.success) {
+					const retryExtractOk = await attemptExtract()
+					if (retryExtractOk) {
+						recoveredCount++
+						return
+					}
+				}
+
+				extractFailed++
 			}),
 		)
 

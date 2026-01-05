@@ -5,7 +5,7 @@
  * Links downloads to the remote catalog for update detection and search.
  */
 
-import { eq, and } from "drizzle-orm"
+import { eq, and, like, inArray } from "drizzle-orm"
 import type { DbClient } from "../index.js"
 import {
 	localRoms,
@@ -42,6 +42,13 @@ export interface RecordLocalFileParams {
 	sha1?: string
 	/** Optional CRC32 hash */
 	crc32?: string
+}
+
+export interface PruneLocalRomsParams {
+	/** Only consider DB rows whose localPath starts with this prefix. */
+	prefix: string
+	/** Set of localPaths that are known to exist (e.g. from a fresh filesystem scan). */
+	keepPaths: ReadonlySet<string>
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -268,6 +275,49 @@ export function getLocalRomStats(db: DbClient): Map<string, number> {
 	}
 
 	return stats
+}
+
+/**
+ * Prune stale local_roms rows whose localPath no longer exists.
+ *
+ * Intended to be used after a full filesystem scan. Callers pass a set of
+ * scanned file paths, and this function removes DB rows under `prefix` that
+ * are not present in that set.
+ */
+export function pruneLocalRoms(
+	db: DbClient,
+	params: PruneLocalRomsParams,
+): {
+	pruned: number
+} {
+	const normalizedPrefix = params.prefix.endsWith("/")
+		? params.prefix
+		: `${params.prefix}/`
+
+	const rows = db
+		.select({ id: localRoms.id, localPath: localRoms.localPath })
+		.from(localRoms)
+		.where(like(localRoms.localPath, `${normalizedPrefix}%`))
+		.all()
+
+	const idsToDelete: number[] = []
+	for (const row of rows) {
+		if (!params.keepPaths.has(row.localPath)) {
+			idsToDelete.push(row.id)
+		}
+	}
+
+	if (idsToDelete.length === 0) return { pruned: 0 }
+
+	const CHUNK_SIZE = 500
+	db.transaction(tx => {
+		for (let i = 0; i < idsToDelete.length; i += CHUNK_SIZE) {
+			const chunk = idsToDelete.slice(i, i + CHUNK_SIZE)
+			tx.delete(localRoms).where(inArray(localRoms.id, chunk)).run()
+		}
+	})
+
+	return { pruned: idsToDelete.length }
 }
 
 /**

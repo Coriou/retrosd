@@ -14,6 +14,7 @@ import {
 } from "node:fs"
 import { pipeline } from "node:stream/promises"
 import { dirname, join, basename, extname } from "node:path"
+import { spawn } from "node:child_process"
 import yauzl from "yauzl"
 
 export interface ExtractOptions {
@@ -187,6 +188,75 @@ export async function extractZip(
 			error: err instanceof Error ? err.message : String(err),
 		}
 	}
+}
+
+async function hasCommand(command: string): Promise<boolean> {
+	return new Promise(resolve => {
+		const proc = spawn("which", [command], { stdio: "ignore" })
+		proc.on("close", code => resolve(code === 0))
+	})
+}
+
+export function is7zArchive(filename: string): boolean {
+	const ext = extname(filename).toLowerCase()
+	return ext === ".7z"
+}
+
+/**
+ * Extract a .7z archive using the system 7z tool.
+ *
+ * Note: filtering + flattening are not supported for 7z extraction.
+ */
+export async function extract7z(
+	archivePath: string,
+	destDir: string,
+	options: Pick<ExtractOptions, "deleteArchive">,
+): Promise<ExtractResult> {
+	if (!(await hasCommand("7z")) && !(await hasCommand("7zz"))) {
+		return {
+			success: false,
+			extractedFiles: [],
+			error:
+				"7z not found. Install p7zip: brew install p7zip (macOS) or apt-get install p7zip-full (Linux)",
+		}
+	}
+
+	mkdirSync(destDir, { recursive: true })
+
+	const tool = (await hasCommand("7z")) ? "7z" : "7zz"
+
+	const result = await new Promise<{ success: boolean; error?: string }>(
+		resolve => {
+			const proc = spawn(tool, ["x", "-y", archivePath, `-o${destDir}`], {
+				stdio: "ignore",
+			})
+			proc.on("close", code => {
+				if (code === 0) resolve({ success: true })
+				else
+					resolve({ success: false, error: `${tool} exited with code ${code}` })
+			})
+			proc.on("error", err => resolve({ success: false, error: err.message }))
+		},
+	)
+
+	if (!result.success) {
+		return {
+			success: false,
+			extractedFiles: [],
+			error: result.error ?? "Unknown error",
+		}
+	}
+
+	if (options.deleteArchive && existsSync(archivePath)) {
+		try {
+			unlinkSync(archivePath)
+		} catch {
+			// Best-effort
+		}
+	}
+
+	// We don't attempt to enumerate extracted files (7z output is suppressed).
+	return { success: true, extractedFiles: [] }
 }
 
 /**

@@ -20,6 +20,7 @@ import { fetch as undiciFetch } from "undici"
 import { BackpressureController } from "../backpressure.js"
 import { downloadFile, anyExtensionExists, HTTP_AGENT } from "../download.js"
 import { isZipArchive, extractZip } from "../extract.js"
+import { extract7z, is7zArchive } from "../extract.js"
 import {
 	applyFilters,
 	apply1G1R,
@@ -461,6 +462,10 @@ async function* downloadRomEntry(
 	// Create a queue for yielding events from concurrent downloads
 	const eventQueue: DownloadEvent[] = []
 	let resolveQueue: (() => void) | null = null
+	// Track per-file download bytes so we can emit a single "complete" event
+	// after extraction (when enabled) with the final localPath.
+	const downloadedBytesByFilename = new Map<string, number>()
+	const pendingExtraction = new Set<string>()
 
 	const pushEvent = (event: DownloadEvent) => {
 		eventQueue.push(event)
@@ -520,6 +525,7 @@ async function* downloadRomEntry(
 				if (result.success) {
 					successFiles.push(filename)
 					bytesDownloaded += result.bytesDownloaded
+					downloadedBytesByFilename.set(filename, result.bytesDownloaded)
 
 					const meta =
 						item.meta ?? (expectedSize ? { size: expectedSize } : null)
@@ -527,14 +533,21 @@ async function* downloadRomEntry(
 						setManifestEntry(manifest, entry.destDir, filename, meta)
 					}
 
-					pushEvent({
-						type: "complete",
-						id: downloadId,
-						filename,
-						system: entry.key,
-						bytesDownloaded: result.bytesDownloaded,
-						localPath: destPath,
-					})
+					// When extraction is enabled for this entry and this file is a ZIP,
+					// defer the "complete" event until after extraction so consumers
+					// (UI + SQLite tracking) see the final on-disk localPath.
+					if (entry.extract && isZipArchive(filename)) {
+						pendingExtraction.add(filename)
+					} else {
+						pushEvent({
+							type: "complete",
+							id: downloadId,
+							filename,
+							system: entry.key,
+							bytesDownloaded: result.bytesDownloaded,
+							localPath: destPath,
+						})
+					}
 				} else {
 					failedFiles.push({ filename, error: result.error ?? "Unknown error" })
 					pushEvent({
@@ -599,6 +612,9 @@ async function* downloadRomEntry(
 					flatten: true,
 				})
 
+				const downloadedBytes = downloadedBytesByFilename.get(filename) ?? 0
+				const completeId = `${entry.key}-${filename}`
+
 				if (result.success) {
 					_extractedCount++
 					pushEvent({
@@ -608,6 +624,25 @@ async function* downloadRomEntry(
 						system: entry.key,
 						status: "complete",
 					})
+
+					// If we deferred completion for this ZIP, emit it now using the
+					// extracted file path (best-effort: first extracted file).
+					if (pendingExtraction.has(filename)) {
+						pendingExtraction.delete(filename)
+						const extractedName = result.extractedFiles[0]
+						const finalLocalPath = extractedName
+							? join(destDir, extractedName)
+							: archivePath
+						pushEvent({
+							type: "complete",
+							id: completeId,
+							filename,
+							system: entry.key,
+							bytesDownloaded: downloadedBytes,
+							extracted: Boolean(extractedName),
+							localPath: finalLocalPath,
+						})
+					}
 				} else {
 					_extractFailed++
 					pushEvent({
@@ -618,6 +653,20 @@ async function* downloadRomEntry(
 						status: "error",
 						...(result.error ? { error: result.error } : {}),
 					})
+
+					// If completion was deferred, emit it now pointing at the archive.
+					// The archive is preserved on extraction failure.
+					if (pendingExtraction.has(filename)) {
+						pendingExtraction.delete(filename)
+						pushEvent({
+							type: "complete",
+							id: completeId,
+							filename,
+							system: entry.key,
+							bytesDownloaded: downloadedBytes,
+							localPath: archivePath,
+						})
+					}
 				}
 			}),
 		)

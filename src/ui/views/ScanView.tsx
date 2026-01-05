@@ -134,7 +134,7 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 					await import("../../collection.js")
 				const { getDb, closeDb } = await import("../../db/index.js")
 				const { getDbStats } = await import("../../db/queries/stats.js")
-				const { recordLocalFile } =
+				const { recordLocalFile, pruneLocalRoms } =
 					await import("../../db/queries/local-roms.js")
 
 				// We'll use the existing scanner which returns a manifest
@@ -152,8 +152,10 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 				if (options.dbPath && existsSync(options.dbPath)) {
 					try {
 						const db = getDb(options.dbPath)
+						const keepPaths = new Set<string>()
 						for (const sys of manifest.systems) {
 							for (const rom of sys.roms) {
+								keepPaths.add(rom.path)
 								recordLocalFile(db, {
 									localPath: rom.path,
 									fileSize: rom.size,
@@ -164,6 +166,10 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 								})
 							}
 						}
+						pruneLocalRoms(db, {
+							prefix: options.romsDir,
+							keepPaths,
+						})
 					} finally {
 						closeDb()
 					}

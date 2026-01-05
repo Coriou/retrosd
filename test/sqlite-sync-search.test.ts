@@ -6,8 +6,8 @@ import { join } from "node:path"
 
 import { initializeDb } from "../src/db/migrate.js"
 import { closeDb, getDb } from "../src/db/index.js"
-import { remoteRoms, romMetadata } from "../src/db/schema.js"
-import { recordDownload } from "../src/db/queries/local-roms.js"
+import { remoteRoms, romMetadata, localRoms } from "../src/db/schema.js"
+import { recordDownload, pruneLocalRoms } from "../src/db/queries/local-roms.js"
 import { searchRoms, countSearchResults } from "../src/db/queries/search.js"
 
 async function withTempDb<T>(fn: (dbPath: string) => Promise<T>): Promise<T> {
@@ -116,5 +116,56 @@ await test("localOnly filter works with system/filename matching", async () => {
 		})
 		assert.equal(results.length, 1)
 		assert.equal(results[0]?.isLocal, true)
+	})
+})
+
+await test("pruneLocalRoms removes stale local paths under prefix", async () => {
+	await withTempDb(async dbPath => {
+		const db = getDb(dbPath)
+
+		// Seed a remote catalog row so local tracking has something to match.
+		const remote = db
+			.insert(remoteRoms)
+			.values({
+				system: "GB",
+				source: "no-intro",
+				filename: "Tetris (World).gb",
+				size: 456,
+			})
+			.returning({ id: remoteRoms.id })
+			.get()
+
+		db.insert(romMetadata)
+			.values({
+				remoteRomId: remote.id,
+				title: "Tetris",
+				regions: ["World"],
+			})
+			.run()
+
+		// Simulate stale DB entry (e.g., deleted archive) + a real kept file.
+		recordDownload(db, {
+			localPath: "/tmp/Roms/GB/Tetris (World).zip",
+			fileSize: 999,
+			system: "GB",
+			filename: "Tetris (World).gb",
+		})
+		recordDownload(db, {
+			localPath: "/tmp/Roms/GB/Tetris (World).gb",
+			fileSize: 456,
+			system: "GB",
+			filename: "Tetris (World).gb",
+		})
+
+		const before = db.select().from(localRoms).all().length
+		const pruned = pruneLocalRoms(db, {
+			prefix: "/tmp/Roms",
+			keepPaths: new Set(["/tmp/Roms/GB/Tetris (World).gb"]),
+		})
+		const after = db.select().from(localRoms).all().length
+
+		assert.ok(before >= 2)
+		assert.equal(pruned.pruned, 1)
+		assert.equal(after, before - 1)
 	})
 })
