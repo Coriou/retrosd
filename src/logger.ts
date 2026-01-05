@@ -159,4 +159,7 @@ export const log = {
 	get cli() {
 		return createLogger("cli")
 	},
+	get db() {
+		return createLogger("db")
+	},
 } as const

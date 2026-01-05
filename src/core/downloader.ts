@@ -542,6 +542,7 @@ async function* downloadRomEntry(
 						filename,
 						system: entry.key,
 						bytesDownloaded: result.bytesDownloaded,
+						localPath: destPath,
 					})
 				} else {
 					failedFiles.push({ filename, error: result.error ?? "Unknown error" })

@@ -8,12 +8,44 @@
  */
 import { Box, Text, useApp } from "ink"
 import { useEffect, useState, useRef } from "react"
+import { existsSync } from "node:fs"
 import { Spinner } from "../components/Spinner.js"
 import { Header, Section } from "../components/Header.js"
 import { Success, Info } from "../components/Message.js"
-import { ProgressBar } from "../components/ProgressBar.js"
 import { colors, symbols } from "../theme.js"
 import type { AppResult } from "../App.js"
+
+function inferCatalogSystemKey(
+	systemDir: string,
+	localFilename: string,
+): string {
+	if (systemDir === "FC") {
+		const ext = localFilename
+			.slice(localFilename.lastIndexOf("."))
+			.toLowerCase()
+		return ext === ".fds" ? "FC_FDS" : "FC_CART"
+	}
+
+	// These match collection.ts's SYSTEM_SOURCE_MAP keys
+	const map: Record<string, string> = {
+		GB: "GB",
+		GBA: "GBA",
+		GBC: "GBC",
+		MD: "MD",
+		PCE: "PCE",
+		PKM: "PKM",
+		SGB: "SGB",
+		PS: "PS",
+	}
+
+	return map[systemDir] ?? systemDir
+}
+
+function inferCatalogFilename(localFilename: string): string {
+	const dot = localFilename.lastIndexOf(".")
+	const base = dot > 0 ? localFilename.slice(0, dot) : localFilename
+	return `${base}.zip`
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -21,6 +53,8 @@ import type { AppResult } from "../App.js"
 
 export interface ScanOptions {
 	romsDir: string
+	/** Optional path to SQLite DB for displaying catalog/search stats */
+	dbPath?: string
 	includeHashes?: boolean
 	verbose?: boolean
 	quiet?: boolean
@@ -36,6 +70,19 @@ interface ScanResult {
 	systems: Map<string, { count: number; bytes: number }>
 	totalRoms: number
 	totalBytes: number
+	dbStats?: {
+		catalogTotalRoms: number
+		catalogSystems: number
+		localRoms: number
+		syncLastSyncedAt: string | null
+		syncStatusCounts: {
+			synced: number
+			stale: number
+			syncing: number
+			error: number
+			other: number
+		}
+	} | null
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,7 +122,6 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 	const { exit } = useApp()
 	const [isScanning, setIsScanning] = useState(true)
 	const [result, setResult] = useState<ScanResult | null>(null)
-	const [currentSystem, setCurrentSystem] = useState<string | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const startTimeRef = useRef(Date.now())
 
@@ -84,6 +130,10 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 			try {
 				const { scanCollection, exportManifest } =
 					await import("../../collection.js")
+				const { getDb, closeDb } = await import("../../db/index.js")
+				const { getDbStats } = await import("../../db/queries/stats.js")
+				const { recordLocalFile } =
+					await import("../../db/queries/local-roms.js")
 
 				// We'll use the existing scanner which returns a manifest
 				const manifest = await scanCollection(options.romsDir, {
@@ -94,6 +144,27 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 
 				if (options.outputFile) {
 					exportManifest(manifest, options.outputFile)
+				}
+
+				// Reconcile pre-existing ROM files into local_roms so search can mark them as local
+				if (options.dbPath && existsSync(options.dbPath)) {
+					try {
+						const db = getDb(options.dbPath)
+						for (const sys of manifest.systems) {
+							for (const rom of sys.roms) {
+								recordLocalFile(db, {
+									localPath: rom.path,
+									fileSize: rom.size,
+									system: inferCatalogSystemKey(sys.system, rom.filename),
+									filename: inferCatalogFilename(rom.filename),
+									...(rom.sha1 ? { sha1: rom.sha1 } : {}),
+									...(rom.crc32 ? { crc32: rom.crc32 } : {}),
+								})
+							}
+						}
+					} finally {
+						closeDb()
+					}
 				}
 
 				// Convert manifest to our display format
@@ -113,7 +184,26 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 					}
 				}
 
-				setResult({ systems, totalRoms, totalBytes })
+				let dbStats: ScanResult["dbStats"] = null
+				if (options.dbPath && existsSync(options.dbPath)) {
+					try {
+						const db = getDb(options.dbPath)
+						const stats = getDbStats(db)
+						dbStats = {
+							catalogTotalRoms: stats.catalog.totalRoms,
+							catalogSystems: stats.catalog.systemCount,
+							localRoms: stats.catalog.localRoms,
+							syncLastSyncedAt: stats.sync.lastSyncedAt,
+							syncStatusCounts: stats.sync.statusCounts,
+						}
+					} catch {
+						dbStats = null
+					} finally {
+						closeDb()
+					}
+				}
+
+				setResult({ systems, totalRoms, totalBytes, dbStats })
 				setIsScanning(false)
 
 				const elapsed = Date.now() - startTimeRef.current
@@ -144,13 +234,7 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 
 			{isScanning && (
 				<Box flexDirection="column" marginY={1}>
-					<Spinner
-						label={
-							currentSystem
-								? `Scanning ${currentSystem}…`
-								: "Scanning directories…"
-						}
-					/>
+					<Spinner label={"Scanning directories…"} />
 					{options.includeHashes && (
 						<Box marginTop={1}>
 							<Info>Computing file hashes (this may take a while)</Info>
@@ -208,6 +292,45 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 							</Box>
 						</Box>
 					</Box>
+
+					{options.dbPath && (
+						<Box marginTop={1}>
+							<Section title="Database">
+								<Box flexDirection="column" gap={0}>
+									<Box>
+										<Text color={colors.muted}>DB: </Text>
+										<Text>{options.dbPath}</Text>
+									</Box>
+									{!result.dbStats && (
+										<Text color={colors.muted}>
+											No catalog stats available (run "retrosd sync" first)
+										</Text>
+									)}
+									{result.dbStats && (
+										<>
+											<Box>
+												<Text color={colors.muted}>Catalog: </Text>
+												<Text>
+													{result.dbStats.catalogTotalRoms.toLocaleString()}{" "}
+													ROMs across {result.dbStats.catalogSystems} systems (
+													{result.dbStats.localRoms.toLocaleString()} local)
+												</Text>
+											</Box>
+											<Box>
+												<Text color={colors.muted}>Sync: </Text>
+												<Text>
+													{result.dbStats.syncLastSyncedAt ?? "never"}
+													{"  "}synced:{result.dbStats.syncStatusCounts.synced}{" "}
+													stale:{result.dbStats.syncStatusCounts.stale} error:
+													{result.dbStats.syncStatusCounts.error}
+												</Text>
+											</Box>
+										</>
+									)}
+								</Box>
+							</Section>
+						</Box>
+					)}
 
 					<Box marginTop={1}>
 						<Success>Scan complete</Success>

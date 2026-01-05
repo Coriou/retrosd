@@ -17,10 +17,13 @@ import pLimit from "p-limit"
 
 import { loadMetadata } from "../../metadata.js"
 import { hashFile } from "../../hash.js"
+import { resolveDbPath } from "../../db/index.js"
+import { initializeDb } from "../../db/migrate.js"
 import type { ScrapeEvent, ScraperOptions } from "../types.js"
 
 import { LaneRateLimiter } from "./rate-limiter.js"
 import { GameCache } from "./cache.js"
+import { migrateJsonCacheIfExists } from "./migration.js"
 import {
 	searchScreenScraper,
 	validateCredentials,
@@ -177,9 +180,17 @@ async function* scrapeSystem(
 
 	const startTime = Date.now()
 
+	// Ensure the SQLite database exists and is migrated before we use the cache.
+	// We store the DB at the SD card root (two levels above the system directory).
+	const targetDir = dirname(dirname(systemDir))
+	const dbPath = options.dbPath ?? resolveDbPath(targetDir)
+	await initializeDb(dbPath)
+
+	// One-time import of any legacy JSON cache for this system.
+	migrateJsonCacheIfExists(systemDir, dbPath)
+
 	// Initialize cache and rate limiter
-	const cacheFile = join(systemDir, ".screenscraper-cache.json")
-	const cache = new GameCache(cacheFile)
+	const cache = new GameCache(dbPath)
 
 	const lanes = Math.max(1, Math.floor(options.concurrency ?? 1))
 	const apiLimiter = new LaneRateLimiter(lanes, 1200) // 1.2s per thread

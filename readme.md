@@ -88,7 +88,7 @@ You get just: `Super Mario Bros. (Europe).nes` (the highest priority version)
 
 ### 4. Collection Scanning & Verification ✅
 
-**New Commands:**
+**Commands:**
 
 #### `retrosd scan`
 
@@ -125,7 +125,48 @@ retrosd verify /path/to/sdcard
 
 ---
 
-### 5. Format Conversion (CHD) ✅
+### 5. Local Catalog Sync & Search ✅
+
+**What it does:**
+
+- Builds a local SQLite index of remote catalogs for fast, offline queries
+- Provides instant search across systems (title/filename, system/region filters)
+- Tracks catalog freshness and local download status in the database
+
+**Why it matters:**
+
+- Sub-second searches without re-fetching listings each run
+- Works offline once synced
+- Enables `--local` queries to show what you have downloaded
+
+**Usage:**
+
+```bash
+# Build/update the local catalog database (stored in the target by default)
+retrosd sync /path/to/sdcard
+
+# Search the local catalog
+retrosd search /path/to/sdcard mario
+
+# Interactive search UI
+retrosd search /path/to/sdcard -i
+
+# Filter by system/region and show only downloaded ROMs
+retrosd search /path/to/sdcard zelda --systems=GB,GBA --regions=USA,Europe --local
+
+# Custom DB location (absolute path or relative to the target)
+retrosd sync /path/to/sdcard --db-path .retrosd/catalog.db
+retrosd search /path/to/sdcard pokemon --db-path .retrosd/catalog.db
+```
+
+**Database location:**
+
+- Default: `.retrosd.db` at the SD card root (same directory as `Bios/` and `Roms/`)
+- Override: `--db-path <path>` (relative paths are resolved from the target)
+
+---
+
+### 6. Format Conversion (CHD) ✅
 
 **What it does:**
 
@@ -156,7 +197,7 @@ retrosd convert /path/to/sdcard --delete-originals
 
 ---
 
-### 6. Collection Export ✅
+### 7. Collection Export ✅
 
 **What it does:**
 
@@ -179,7 +220,7 @@ retrosd export /path/to/sdcard -o collection.json
 
 ---
 
-### 7. Artwork & Media Scraping ✅
+### 8. Artwork & Media Scraping ✅
 
 **What it does:**
 
@@ -223,7 +264,7 @@ All major systems including GB, GBA, GBC, NES, SNES, Genesis, PS1, and more.
 
 ---
 
-### 8. Metadata Generation Command ✅
+### 9. Metadata Generation Command ✅
 
 **What it does:**
 

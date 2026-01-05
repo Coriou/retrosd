@@ -13,6 +13,10 @@ export type { DownloadEvent, DownloaderOptions } from "./downloader.js"
 // Scraper engine
 export { scrapeArtwork, validateCredentials } from "./scraper/index.js"
 
+// Catalog sync engine
+export { syncCatalog, getSyncStates, getCatalogStats } from "./catalog-sync.js"
+export type { SyncOptions, CatalogSyncEvent } from "./catalog-sync.js"
+
 // Shared types
 export type {
 	ScrapeEvent,

@@ -7,7 +7,7 @@
 
 import "../bootstrap.js"
 import { existsSync } from "node:fs"
-import { join } from "node:path"
+import { join, isAbsolute, resolve } from "node:path"
 import { Command } from "commander"
 import { loadConfig } from "../config.js"
 import { ui } from "../ui.js"
@@ -57,6 +57,13 @@ import {
 import type { ScraperOptions } from "../core/types.js"
 import { generateMetadataForExisting } from "../metadata.js"
 import { flushLogs } from "../logger.js"
+
+function resolveDbPathForTarget(targetDir: string, dbPath?: string): string {
+	if (!dbPath) return join(targetDir, ".retrosd.db")
+	if (dbPath === ":memory:") return dbPath
+	if (isAbsolute(dbPath)) return dbPath
+	return resolve(targetDir, dbPath)
+}
 
 async function exitWithCode(code: number): Promise<void> {
 	if (code === 0) return
@@ -174,6 +181,10 @@ program
 		"Retro SD Card Creator – BIOS & ROM downloader for retro gaming consoles",
 	)
 	.argument("<target>", "Path to SD card root directory")
+	.option(
+		"--db-path <path>",
+		"Custom SQLite database path (default: <target>/.retrosd.db; relative paths resolved from <target>)",
+	)
 	.option("-n, --dry-run", "Preview actions without downloading", false)
 	.option("-j, --jobs <number>", "Number of parallel downloads", "4")
 	.option("--bios-only", "Only download BIOS files", false)
@@ -256,6 +267,282 @@ program
 		runUiTest()
 	})
 
+// Add sync command
+program
+	.command("sync")
+	.description("Sync remote ROM catalogs to local database for fast search")
+	.argument("<target>", "Path to SD card root directory (database stored here)")
+	.option("--systems <list>", "Comma-separated system keys (default: all)")
+	.option("--force", "Force full resync, ignoring timestamps", false)
+	.option("-q, --quiet", "Minimal output", false)
+	.option("--ink", "Use Ink React UI for progress display", false)
+	.action(async (target, options, command) => {
+		setupPromptHandlers()
+		const parentOptions = command.parent?.opts?.() ?? {}
+
+		if (!existsSync(target)) {
+			ui.error(`Directory does not exist: ${target}`)
+			process.exit(1)
+		}
+
+		const dbPath = resolveDbPathForTarget(
+			target,
+			(parentOptions.dbPath as string | undefined) ?? undefined,
+		)
+		const systems = options.systems
+			? options.systems.split(",").map((s: string) => s.trim())
+			: undefined
+
+		const isInteractiveTty = Boolean(process.stdout.isTTY)
+		const useInk = Boolean(options.ink || (isInteractiveTty && !options.quiet))
+
+		const syncOptions = {
+			dbPath,
+			systems,
+			force: options.force,
+		}
+
+		if (useInk) {
+			const { runSyncView } = await import("../ui/renderApp.js")
+			const exitCode = await runSyncView(syncOptions)
+			if (exitCode !== 0) await exitWithCode(exitCode)
+			return
+		}
+
+		// Plain-text fallback (no Ink)
+		const { syncCatalog } = await import("../core/catalog-sync.js")
+
+		ui.header("Syncing Catalogs to Local Database")
+		if (!options.quiet) {
+			ui.info(`Database: ${dbPath}`)
+			if (systems) {
+				ui.info(`Systems: ${systems.join(", ")}`)
+			} else {
+				ui.info("Systems: all")
+			}
+		}
+
+		let totalRoms = 0
+		let errors = 0
+
+		for await (const event of syncCatalog(syncOptions)) {
+			switch (event.type) {
+				case "sync:start":
+					if (!options.quiet) {
+						ui.info(`Starting sync for ${event.totalSystems} systems`)
+					}
+					break
+				case "system:start":
+					if (!options.quiet) {
+						ui.info(`${event.system}: fetching ${event.label}…`)
+					}
+					break
+				case "system:complete":
+					if (!options.quiet) {
+						ui.success(
+							`${event.system}: ${event.romCount.toLocaleString()} ROMs indexed in ${(event.durationMs / 1000).toFixed(1)}s`,
+						)
+					}
+					totalRoms += event.romCount
+					break
+				case "system:skip":
+					if (!options.quiet) {
+						ui.info(`${event.system}: ${event.reason}`)
+					}
+					break
+				case "system:error":
+					ui.error(`${event.system}: ${event.error}`)
+					errors++
+					break
+				case "sync:complete":
+					ui.success(
+						`Sync complete: ${totalRoms.toLocaleString()} ROMs indexed across ${event.totalSystems} systems`,
+					)
+					break
+			}
+		}
+
+		if (errors > 0) {
+			process.exit(1)
+		}
+	})
+
+// Add search command
+program
+	.command("search")
+	.description("Search the local ROM catalog (synced database)")
+	.argument("<target>", "Path to SD card root directory (database location)")
+	.argument("[query]", "Search query (matches title or filename)")
+	.option("--systems <list>", "Comma-separated system filters (e.g., GB,GBA)")
+	.option(
+		"--regions <list>",
+		"Comma-separated region filters (e.g., USA,Europe)",
+	)
+	.option("--local", "Only show locally downloaded ROMs", false)
+	.option("--include-prerelease", "Include beta/demo/proto ROMs", false)
+	.option("-n, --limit <number>", "Results per page", "25")
+	.option("-i, --interactive", "Interactive mode (Ink UI)", false)
+	.option("-q, --quiet", "Minimal output", false)
+	.action(async (target, query, options, command) => {
+		setupPromptHandlers()
+		const parentOptions = command.parent?.opts?.() ?? {}
+
+		if (!existsSync(target)) {
+			ui.error(`Directory does not exist: ${target}`)
+			process.exit(1)
+		}
+
+		const dbPathOverride =
+			(parentOptions.dbPath as string | undefined) ?? undefined
+		const dbPath = resolveDbPathForTarget(target, dbPathOverride)
+		if (!existsSync(dbPath)) {
+			ui.error(`Database not found: ${dbPath}`)
+			ui.info(
+				dbPathOverride
+					? `Run 'retrosd sync ${target} --db-path ${dbPathOverride}' first to sync the catalog.`
+					: `Run 'retrosd sync ${target}' first to sync the catalog.`,
+			)
+			process.exit(1)
+		}
+
+		const systems = options.systems
+			? options.systems.split(",").map((s: string) => s.trim())
+			: undefined
+		const regions = options.regions
+			? options.regions.split(",").map((r: string) => r.trim())
+			: undefined
+
+		const isInteractiveTty = Boolean(process.stdout.isTTY)
+		const useInk = Boolean(
+			options.interactive || (isInteractiveTty && !options.quiet),
+		)
+
+		const searchOpts = {
+			dbPath,
+			targetDir: target,
+			query: query ?? "",
+			systems,
+			regions,
+			localOnly: options.local,
+			excludePrerelease: !options.includePrerelease,
+			limit: parseInt(options.limit, 10) || 25,
+		}
+
+		if (useInk) {
+			const { runSearchView } = await import("../ui/renderApp.js")
+			const result = await runSearchView(searchOpts)
+			if (result?.failed) await exitWithCode(1)
+
+			if (result?.nextAction?.type === "download") {
+				const { system, source, filename } = result.nextAction
+				const selectedEntries = getEntriesByKeys([system]).filter(
+					e => e.source === source,
+				)
+				if (selectedEntries.length === 0) {
+					ui.error(`No downloader entry found for ${system} (${source})`)
+					await exitWithCode(1)
+					return
+				}
+
+				const config = loadConfig()
+				const romsDir = join(target, "Roms")
+				await createRomDirectories(romsDir)
+
+				const inkOptions = {
+					dbPath,
+					romsDir,
+					entries: selectedEntries,
+					dryRun: false,
+					verbose: Boolean(parentOptions.verbose),
+					jobs: 4,
+					retryCount: config.retryCount,
+					retryDelay: config.retryDelay,
+					update: false,
+					includePrerelease: false,
+					includeUnlicensed: false,
+					includeHacks: false,
+					includeHomebrew: false,
+					includeList: new Set([filename]),
+					diskProfile: "balanced" as const,
+					enable1G1R: false,
+				}
+
+				const rendered = renderDownload(inkOptions)
+				await rendered.waitUntilExit()
+				const downloadResult = rendered.result
+				if (downloadResult?.failed) await exitWithCode(1)
+			}
+			return
+		}
+
+		// Plain-text output (non-interactive)
+		const { getDb } = await import("../db/index.js")
+		const { searchRoms, countSearchResults, getCatalogStats } =
+			await import("../db/queries/search.js")
+
+		const db = getDb(dbPath)
+		const stats = getCatalogStats(db)
+
+		if (stats.totalRoms === 0) {
+			ui.warn(
+				"Catalog is empty. Run 'retrosd sync' first to populate the database.",
+			)
+			process.exit(0)
+		}
+
+		if (!query && !systems && !regions && !options.local) {
+			// No filters - show catalog summary
+			ui.header("ROM Catalog")
+			ui.info(`Total ROMs: ${stats.totalRoms.toLocaleString()}`)
+			ui.info(`Systems: ${stats.systemCount}`)
+			ui.info(`Downloaded: ${stats.localRoms.toLocaleString()}`)
+			ui.info("")
+			ui.info("Per-system breakdown:")
+			for (const s of stats.systemStats.slice(0, 15)) {
+				const localLabel = s.localCount > 0 ? ` (${s.localCount} local)` : ""
+				ui.info(`  ${s.system}: ${s.count.toLocaleString()}${localLabel}`)
+			}
+			if (stats.systemStats.length > 15) {
+				ui.info(`  ... and ${stats.systemStats.length - 15} more systems`)
+			}
+			ui.info("")
+			ui.info(
+				"Use 'retrosd search <target> <query>' to search, or -i for interactive mode.",
+			)
+			return
+		}
+
+		const results = searchRoms(db, searchOpts)
+		const totalCount = countSearchResults(db, searchOpts)
+
+		if (!options.quiet) {
+			ui.header(`Search Results: "${query || "(all)}"}"`)
+			ui.info(`Found ${totalCount} matching ROMs`)
+		}
+
+		if (results.length === 0) {
+			ui.warn("No ROMs match your query.")
+			process.exit(0)
+		}
+
+		// Table-style output
+		for (const rom of results) {
+			const localMark = rom.isLocal ? "✓" : " "
+			const regions = rom.regions?.slice(0, 2).join(",") ?? ""
+			const title = rom.title ?? rom.filename
+			const display = title.length > 50 ? title.slice(0, 49) + "…" : title
+			ui.info(
+				`[${localMark}] ${rom.system.padEnd(5)} ${display.padEnd(52)} ${regions}`,
+			)
+		}
+
+		if (totalCount > results.length) {
+			ui.info(
+				`\n... and ${totalCount - results.length} more results. Use -i for interactive browsing.`,
+			)
+		}
+	})
+
 // Add scan command
 program
 	.command("scan")
@@ -266,8 +553,40 @@ program
 	.option("--hashes", "Compute SHA-1/CRC32 hashes (slower)", false)
 	.option("-o, --output <file>", "Export manifest to JSON file")
 	.option("--ink", "Use Ink React UI for progress display", false)
-	.action(async (target, options) => {
+	.action(async (target, options, command) => {
 		setupPromptHandlers()
+		const parentOptions = command.parent?.opts?.() ?? {}
+
+		function inferCatalogSystemKey(
+			systemDir: string,
+			localFilename: string,
+		): string {
+			if (systemDir === "FC") {
+				const ext = localFilename
+					.slice(localFilename.lastIndexOf("."))
+					.toLowerCase()
+				return ext === ".fds" ? "FC_FDS" : "FC_CART"
+			}
+
+			const map: Record<string, string> = {
+				GB: "GB",
+				GBA: "GBA",
+				GBC: "GBC",
+				MD: "MD",
+				PCE: "PCE",
+				PKM: "PKM",
+				SGB: "SGB",
+				PS: "PS",
+			}
+
+			return map[systemDir] ?? systemDir
+		}
+
+		function inferCatalogFilename(localFilename: string): string {
+			const dot = localFilename.lastIndexOf(".")
+			const base = dot > 0 ? localFilename.slice(0, dot) : localFilename
+			return `${base}.zip`
+		}
 
 		if (!existsSync(target)) {
 			ui.error(`Directory does not exist: ${target}`)
@@ -275,6 +594,10 @@ program
 		}
 
 		const romsDir = join(target, "Roms")
+		const dbPath = resolveDbPathForTarget(
+			target,
+			(parentOptions.dbPath as string | undefined) ?? undefined,
+		)
 		const isInteractiveTty = Boolean(process.stdout.isTTY)
 		const useInk = Boolean(options.ink || (isInteractiveTty && !options.quiet))
 
@@ -282,6 +605,7 @@ program
 		if (useInk) {
 			const exitCode = await runScanView({
 				romsDir,
+				dbPath,
 				includeHashes: options.hashes,
 				verbose: options.verbose,
 				quiet: options.quiet,
@@ -300,6 +624,66 @@ program
 		if (options.output) {
 			exportManifest(manifest, options.output)
 			ui.success(`Manifest exported to ${options.output}`)
+		}
+
+		// Reconcile scanned ROM files into local_roms for accurate search local status
+		try {
+			if (existsSync(dbPath)) {
+				const { getDb, closeDb } = await import("../db/index.js")
+				const { recordLocalFile } = await import("../db/queries/local-roms.js")
+				const db = getDb(dbPath)
+				for (const sys of manifest.systems) {
+					for (const rom of sys.roms) {
+						recordLocalFile(db, {
+							localPath: rom.path,
+							fileSize: rom.size,
+							system: inferCatalogSystemKey(sys.system, rom.filename),
+							filename: inferCatalogFilename(rom.filename),
+							...(rom.sha1 ? { sha1: rom.sha1 } : {}),
+							...(rom.crc32 ? { crc32: rom.crc32 } : {}),
+						})
+					}
+				}
+				closeDb()
+			}
+		} catch {
+			// Best-effort; scan output should still be useful even if DB reconciliation fails
+		}
+
+		// SQLite catalog/search stats (optional)
+		if (!options.quiet) {
+			try {
+				if (!existsSync(dbPath)) {
+					ui.info("")
+					ui.info("Database: (not found)")
+					ui.info(`Expected at: ${dbPath}`)
+					ui.info(`Run 'retrosd sync ${target}' to build the local catalog.`)
+					return
+				}
+
+				const { getDb, closeDb } = await import("../db/index.js")
+				const { getDbStats } = await import("../db/queries/stats.js")
+
+				const db = getDb(dbPath)
+				const stats = getDbStats(db)
+				closeDb()
+
+				ui.info("")
+				ui.header("Database")
+				ui.info(`DB: ${dbPath}`)
+				ui.info(
+					`Catalog: ${stats.catalog.totalRoms.toLocaleString()} ROMs across ${stats.catalog.systemCount} systems (${stats.catalog.localRoms.toLocaleString()} local)`,
+				)
+				ui.info(
+					`Sync: ${stats.sync.lastSyncedAt ?? "never"}  synced:${stats.sync.statusCounts.synced} stale:${stats.sync.statusCounts.stale} error:${stats.sync.statusCounts.error}`,
+				)
+			} catch {
+				ui.info("")
+				ui.info(`DB: ${dbPath}`)
+				ui.warn(
+					"Database exists but stats could not be read. Run 'retrosd sync' to initialize/migrate.",
+				)
+			}
 		}
 	})
 
@@ -575,6 +959,10 @@ program
 				path: join(romsDir, s),
 				system: s,
 			})),
+			dbPath: resolveDbPathForTarget(
+				target,
+				(parentOptions.dbPath as string | undefined) ?? undefined,
+			),
 			boxArt: options.box,
 			screenshot: options.screenshot,
 			video: options.video,
@@ -747,6 +1135,7 @@ program
 
 interface CliArgs {
 	target: string
+	dbPath?: string
 	dryRun: boolean
 	jobs: string
 	biosOnly: boolean
@@ -771,6 +1160,8 @@ interface CliArgs {
 	region?: string
 	regionPriority?: string
 	lang?: string
+	langScope?: string
+	langInfer: boolean
 	langPriority?: string
 	update: boolean
 	diskProfile: string
@@ -945,6 +1336,7 @@ async function run(
 	// Set up paths
 	const biosDir = join(target, "Bios")
 	const romsDir = join(target, "Roms")
+	const dbPath = resolveDbPathForTarget(target, options.dbPath)
 
 	// Print banner
 	if (dryRun) {
@@ -1225,6 +1617,7 @@ async function run(
 
 		if (useInk) {
 			const inkOptions = {
+				dbPath,
 				romsDir,
 				entries: selectedEntries,
 				dryRun,
@@ -1354,6 +1747,7 @@ async function run(
 
 			const scraperOptions: ScraperOptions = {
 				systemDirs,
+				dbPath,
 				boxArt: mediaList.includes("box"),
 				screenshot: mediaList.includes("screenshot"),
 				video: mediaList.includes("video"),

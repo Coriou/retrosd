@@ -14,7 +14,9 @@ import type {
 	ScanOptions,
 	VerifyOptions,
 	ConvertOptions,
+	SearchViewOptions,
 } from "./views/index.js"
+import type { SyncOptions } from "../core/catalog-sync.js"
 
 let inkLoggingConfigured = false
 
@@ -173,6 +175,7 @@ export function renderApp(
 		scanOptions?: ScanOptions
 		verifyOptions?: VerifyOptions
 		convertOptions?: ConvertOptions
+		syncOptions?: SyncOptions
 	},
 ): RenderResult {
 	let result: AppResult | null = null
@@ -242,4 +245,74 @@ export async function runConvertView(options: ConvertOptions): Promise<number> {
 	const { result, waitUntilExit } = renderConvert(options)
 	await waitUntilExit()
 	return result?.failed ? 1 : 0
+}
+
+/**
+ * Render the sync view with Ink
+ */
+export function renderSync(options: SyncOptions): RenderResult {
+	let result: AppResult | null = null
+	ensureInkLogging()
+
+	const { waitUntilExit } = render(
+		<App
+			command="sync"
+			syncOptions={options}
+			onComplete={r => {
+				result = r
+			}}
+		/>,
+	)
+
+	return {
+		get result() {
+			return result
+		},
+		waitUntilExit,
+	}
+}
+
+/**
+ * Run the sync view and wait for completion
+ */
+export async function runSyncView(options: SyncOptions): Promise<number> {
+	const { result, waitUntilExit } = renderSync(options)
+	await waitUntilExit()
+	return result?.failed ? 1 : 0
+}
+
+/**
+ * Render the search view with Ink
+ */
+export function renderSearch(options: SearchViewOptions): RenderResult {
+	let result: AppResult | null = null
+	ensureInkLogging()
+
+	const { waitUntilExit } = render(
+		<App
+			command="search"
+			searchOptions={options}
+			onComplete={r => {
+				result = r
+			}}
+		/>,
+	)
+
+	return {
+		get result() {
+			return result
+		},
+		waitUntilExit,
+	}
+}
+
+/**
+ * Run the search view and wait for completion
+ */
+export async function runSearchView(
+	options: SearchViewOptions,
+): Promise<AppResult | null> {
+	const { result, waitUntilExit } = renderSearch(options)
+	await waitUntilExit()
+	return result ?? null
 }

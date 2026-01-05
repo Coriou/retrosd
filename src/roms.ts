@@ -214,7 +214,8 @@ export const ROM_ENTRIES: RomEntry[] = [
 	{
 		key: "FC_CART",
 		source: "no-intro",
-		remotePath: "Nintendo%20-%20Famicom/",
+		remotePath:
+			"Nintendo%20-%20Nintendo%20Entertainment%20System%20%28Headered%29/",
 		archiveRegex: /\.zip$/,
 		extractGlob: "*.nes",
 		label: "Famicom (cart)",
@@ -314,7 +315,7 @@ export const ROM_ENTRIES: RomEntry[] = [
 	{
 		key: "MD_SEGA_CD",
 		source: "redump",
-		remotePath: "Sega%20-%20Mega-CD%20-%20Sega%20CD/",
+		remotePath: "Sega%20-%20Mega%20CD%20%26%20Sega%20CD/",
 		archiveRegex: /\.(zip|7z)$/,
 		extractGlob: "*",
 		label: "Mega CD / Sega CD (Redump)",
@@ -594,6 +595,11 @@ export async function downloadRomEntry(
 		excludePatterns?: string[]
 		includeList?: Set<string>
 		excludeList?: Set<string>
+		includeRegionCodes?: string[]
+		excludeRegionCodes?: string[]
+		includeLanguageCodes?: string[]
+		excludeLanguageCodes?: string[]
+		inferLanguageCodes?: boolean
 		preferredRegion?: string
 		regionPriority?: string[]
 		preferredLanguage?: string

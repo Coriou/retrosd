@@ -1,0 +1,504 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "dfdbe19b-362a-4a90-bf2d-e06d83143462",
+	"prevId": "4d5bc689-8733-4c9f-930d-9124257862df",
+	"tables": {
+		"local_roms": {
+			"name": "local_roms",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"remote_rom_id": {
+					"name": "remote_rom_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"system": {
+					"name": "system",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"filename": {
+					"name": "filename",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"local_path": {
+					"name": "local_path",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"sha1": {
+					"name": "sha1",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"crc32": {
+					"name": "crc32",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"file_size": {
+					"name": "file_size",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"downloaded_at": {
+					"name": "downloaded_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"verified_at": {
+					"name": "verified_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"idx_local_roms_path": {
+					"name": "idx_local_roms_path",
+					"columns": ["local_path"],
+					"isUnique": false
+				},
+				"idx_local_roms_remote": {
+					"name": "idx_local_roms_remote",
+					"columns": ["remote_rom_id"],
+					"isUnique": false
+				},
+				"idx_local_roms_system": {
+					"name": "idx_local_roms_system",
+					"columns": ["system"],
+					"isUnique": false
+				},
+				"idx_local_roms_filename": {
+					"name": "idx_local_roms_filename",
+					"columns": ["filename"],
+					"isUnique": false
+				},
+				"idx_local_roms_sha1": {
+					"name": "idx_local_roms_sha1",
+					"columns": ["sha1"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {
+				"local_roms_remote_rom_id_remote_roms_id_fk": {
+					"name": "local_roms_remote_rom_id_remote_roms_id_fk",
+					"tableFrom": "local_roms",
+					"tableTo": "remote_roms",
+					"columnsFrom": ["remote_rom_id"],
+					"columnsTo": ["id"],
+					"onDelete": "set null",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"remote_roms": {
+			"name": "remote_roms",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"system": {
+					"name": "system",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"source": {
+					"name": "source",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"filename": {
+					"name": "filename",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"size": {
+					"name": "size",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"last_modified": {
+					"name": "last_modified",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"last_synced_at": {
+					"name": "last_synced_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"idx_remote_roms_system": {
+					"name": "idx_remote_roms_system",
+					"columns": ["system"],
+					"isUnique": false
+				},
+				"idx_remote_roms_filename": {
+					"name": "idx_remote_roms_filename",
+					"columns": ["filename"],
+					"isUnique": false
+				},
+				"idx_remote_roms_unique": {
+					"name": "idx_remote_roms_unique",
+					"columns": ["system", "source", "filename"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"rom_metadata": {
+			"name": "rom_metadata",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"remote_rom_id": {
+					"name": "remote_rom_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"title": {
+					"name": "title",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"regions": {
+					"name": "regions",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"languages": {
+					"name": "languages",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"revision": {
+					"name": "revision",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"is_beta": {
+					"name": "is_beta",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": false
+				},
+				"is_demo": {
+					"name": "is_demo",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": false
+				},
+				"is_proto": {
+					"name": "is_proto",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": false
+				},
+				"is_sample": {
+					"name": "is_sample",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": false
+				},
+				"is_unlicensed": {
+					"name": "is_unlicensed",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": false
+				},
+				"is_homebrew": {
+					"name": "is_homebrew",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": false
+				},
+				"is_hack": {
+					"name": "is_hack",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": false
+				},
+				"is_virtual": {
+					"name": "is_virtual",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": false
+				},
+				"is_compilation": {
+					"name": "is_compilation",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": false
+				}
+			},
+			"indexes": {
+				"idx_rom_metadata_title": {
+					"name": "idx_rom_metadata_title",
+					"columns": ["title"],
+					"isUnique": false
+				},
+				"idx_rom_metadata_remote_rom": {
+					"name": "idx_rom_metadata_remote_rom",
+					"columns": ["remote_rom_id"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {
+				"rom_metadata_remote_rom_id_remote_roms_id_fk": {
+					"name": "rom_metadata_remote_rom_id_remote_roms_id_fk",
+					"tableFrom": "rom_metadata",
+					"tableTo": "remote_roms",
+					"columnsFrom": ["remote_rom_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"scraper_cache": {
+			"name": "scraper_cache",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"cache_key": {
+					"name": "cache_key",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"game_id": {
+					"name": "game_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"game_name": {
+					"name": "game_name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"media_urls": {
+					"name": "media_urls",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"raw_response": {
+					"name": "raw_response",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"scraped_at": {
+					"name": "scraped_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"expires_at": {
+					"name": "expires_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"scraper_cache_cache_key_unique": {
+					"name": "scraper_cache_cache_key_unique",
+					"columns": ["cache_key"],
+					"isUnique": true
+				},
+				"idx_scraper_cache_expires": {
+					"name": "idx_scraper_cache_expires",
+					"columns": ["expires_at"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"sync_state": {
+			"name": "sync_state",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "integer",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": true
+				},
+				"system": {
+					"name": "system",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"source": {
+					"name": "source",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"remote_last_modified": {
+					"name": "remote_last_modified",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"local_last_synced": {
+					"name": "local_last_synced",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"remote_count": {
+					"name": "remote_count",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"status": {
+					"name": "status",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false,
+					"default": "'stale'"
+				},
+				"last_error": {
+					"name": "last_error",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"idx_sync_state_unique": {
+					"name": "idx_sync_state_unique",
+					"columns": ["system", "source"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		}
+	},
+	"views": {},
+	"enums": {},
+	"_meta": {
+		"schemas": {},
+		"tables": {},
+		"columns": {}
+	},
+	"internal": {
+		"indexes": {}
+	}
+}

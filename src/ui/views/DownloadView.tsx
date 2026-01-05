@@ -9,6 +9,7 @@
  */
 import { Box, Text, useApp } from "ink"
 import { useEffect, useState, useMemo } from "react"
+import { dirname } from "node:path"
 import { useDownloader } from "../hooks/useDownloader.js"
 import { ProgressBar } from "../components/ProgressBar.js"
 import { Spinner } from "../components/Spinner.js"
@@ -26,6 +27,7 @@ import type {
 	DownloadItemState,
 } from "../../core/types.js"
 import type { AppResult } from "../App.js"
+import { resolveDbPath } from "../../db/index.js"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -234,7 +236,24 @@ function OverallStats({ state, isRunning }: OverallStatsProps) {
 
 export function DownloadView({ options, onComplete }: DownloadViewProps) {
 	const { exit } = useApp()
-	const { state, isRunning, error } = useDownloader(options)
+	const dbPath = useMemo(() => {
+		if (options.dryRun) return undefined
+		return options.dbPath ?? resolveDbPath(dirname(options.romsDir))
+	}, [options.dryRun, options.romsDir])
+
+	useEffect(() => {
+		if (!dbPath) return
+		void (async () => {
+			try {
+				const { initializeDb } = await import("../../db/migrate.js")
+				await initializeDb(dbPath)
+			} catch {
+				// Best-effort; download should not fail if DB init fails
+			}
+		})()
+	}, [dbPath])
+
+	const { state, isRunning, error } = useDownloader(options, dbPath)
 	const [hasNotified, setHasNotified] = useState(false)
 
 	// Get active downloads sorted by start time (newest first, limited to 8)

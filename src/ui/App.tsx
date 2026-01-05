@@ -13,6 +13,12 @@ import { ScrapeView } from "./views/ScrapeView.js"
 import { ScanView } from "./views/ScanView.js"
 import { ConvertView, type ConvertOptions } from "./views/ConvertView.js"
 import { VerifyView, type VerifyOptions } from "./views/VerifyView.js"
+import { SyncView } from "./views/SyncView.js"
+import {
+	SearchView,
+	type SearchOptions as SearchViewOptions,
+} from "./views/SearchView.js"
+import type { SyncOptions } from "../core/catalog-sync.js"
 import { getLogFilePath } from "../logger.js"
 import { colors, symbols } from "./theme.js"
 
@@ -20,7 +26,14 @@ import { colors, symbols } from "./theme.js"
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type Command = "download" | "scrape" | "scan" | "verify" | "convert"
+export type Command =
+	| "download"
+	| "scrape"
+	| "scan"
+	| "verify"
+	| "convert"
+	| "sync"
+	| "search"
 
 export interface AppProps {
 	command: Command
@@ -29,6 +42,8 @@ export interface AppProps {
 	scanOptions?: ScanOptions
 	verifyOptions?: VerifyOptions
 	convertOptions?: ConvertOptions
+	syncOptions?: SyncOptions
+	searchOptions?: SearchViewOptions
 	/** Called when the operation completes */
 	onComplete?: (result: AppResult) => void
 	/** Show keybinding hints */
@@ -37,6 +52,8 @@ export interface AppProps {
 
 export interface ScanOptions {
 	romsDir: string
+	/** Optional path to SQLite DB for displaying catalog/search stats */
+	dbPath?: string
 	includeHashes?: boolean
 	verbose?: boolean
 	quiet?: boolean
@@ -50,6 +67,15 @@ export interface AppResult {
 	skipped?: number
 	bytesProcessed?: number
 	durationMs: number
+	/** Optional action requested by an interactive view (currently used by search). */
+	nextAction?:
+		| {
+				type: "download"
+				system: string
+				source: string
+				filename: string
+		  }
+		| undefined
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -66,6 +92,8 @@ export function App({
 	scanOptions,
 	verifyOptions,
 	convertOptions,
+	syncOptions,
+	searchOptions,
 	onComplete,
 	showHints = true,
 }: AppProps) {
@@ -132,6 +160,26 @@ export function App({
 					)
 				}
 				return <ConvertView options={convertOptions} onComplete={onComplete} />
+
+			case "sync":
+				if (!syncOptions) {
+					return (
+						<Text color={colors.error}>
+							{symbols.error} Sync options required
+						</Text>
+					)
+				}
+				return <SyncView options={syncOptions} onComplete={onComplete} />
+
+			case "search":
+				if (!searchOptions) {
+					return (
+						<Text color={colors.error}>
+							{symbols.error} Search options required
+						</Text>
+					)
+				}
+				return <SearchView options={searchOptions} onComplete={onComplete} />
 
 			default:
 				return (

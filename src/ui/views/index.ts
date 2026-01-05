@@ -16,3 +16,9 @@ export {
 	type ConvertOptions,
 	type ConvertViewProps,
 } from "./ConvertView.js"
+export { SyncView, type SyncViewProps } from "./SyncView.js"
+export {
+	SearchView,
+	type SearchOptions as SearchViewOptions,
+	type SearchViewProps,
+} from "./SearchView.js"

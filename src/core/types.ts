@@ -83,6 +83,8 @@ export interface DownloadCompleteEvent {
 	system: string
 	bytesDownloaded: number
 	extracted?: boolean
+	/** Full path to the downloaded file */
+	localPath: string
 }
 
 /** Emitted when a download fails */
@@ -204,6 +206,9 @@ export interface ScrapeBatchCompleteEvent {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface DownloaderOptions {
+	/** Optional path to SQLite DB (used for tracking downloads in local_roms) */
+	dbPath?: string
+
 	/** Target directory for ROMs */
 	romsDir: string
 
@@ -303,6 +308,9 @@ export interface DownloaderOptions {
 export interface ScraperOptions {
 	/** System directories to scrape */
 	systemDirs: Array<{ path: string; system: string }>
+
+	/** Optional path to SQLite DB for scraper cache (defaults to <target>/.retrosd.db) */
+	dbPath?: string
 
 	/** Download box art */
 	boxArt?: boolean
