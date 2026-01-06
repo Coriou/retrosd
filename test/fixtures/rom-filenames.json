@@ -1,0 +1,1607 @@
+{
+	"description": "Representative ROM filenames from production catalog for parsing tests",
+	"exportedAt": "2026-01-06T10:15:27.774Z",
+	"count": 400,
+	"samples": [
+		{
+			"filename": "'93 Zuixin Yizhi Chaoji Jinka 4-in-1 (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "10-Yard Fight (Japan) (En) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "10-Yard Fight (USA, Europe).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "100-in-1 Real Game (China) (En,Ja) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "168-in-1 (Asia) (En,Ja) (AB CARD-15) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "1942 (Japan, USA) (En).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "1943 - The Battle of Midway (Japan) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "1991 Du Ma Racing (Taiwan) (Super Mega) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "1991 Du Ma Racing (Taiwan) (TXC) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "1992 Super HiK 3-in-1 (Asia) (En,Ja) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "1996 Yingyu CAI 3-in-1 (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "2-in-1 - Zhili Pintu + Dudu Wawa Da Maoxian (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "2010 Street Fighter (Japan) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "23-in-1 Super Game (Europe) (En,Ja) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "29~10MG-in-1 (Asia) (En,Ja) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "3-in-1 Supergun (Asia) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "4 Nin Uchi Mahjong (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "5-in-1 (1993) (Asia) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "58-in-1 (Asia) (En,Zh) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "6-in-1 (Asia) (En,Ja) (SV-1021) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "75 BinGuo (Taiwan) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "75 Bingo (Asia) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "777 Lucky Bingo (Asia) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "777 Xingyun Lunpan (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "777 Xingyun Lunpan (Taiwan) (v1.1) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "8 Eyes (USA, Europe) (Pixel Heart).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "9999999-in-1 - World Series Championship (Taiwan) (En) (Rev 1) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Bishoujo Senshi Girl Fighting (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Hanafuda Club (Japan) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Kyuukyoku Mahjong 2 (Taiwan) (Ge De) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Kyuukyoku Mahjong 2 (Taiwan) (Ka Sheng) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Mahjong Club (Japan) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Mahjong Club (Japan) (v1.1) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Mahjong Club (Taiwan) (Ja) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Pachi-Slot (Taiwan) (Ja) (Idea-Tek) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Pachi-Slot - Big Chance (Japan) (Rev 1) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Pachi-Slot - Big Chance (Japan) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Poker (Japan) (Rev 1) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Poker (Japan) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Soccer (Japan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "AV Super Real Pachinko (Japan) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Action 52 (USA) (Rev A) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Action 52 (USA) (Rev B) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Action 52 (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Adam & Eve (Spain) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Adam & Eve (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Addams Family, The (Europe) (En,Fr,De).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Addams Family, The (USA) (Beta) (1991-08-02).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Advanced Dungeons & Dragons - Heroes of the Lance (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Advanced Dungeons & Dragons - Hillsfar (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Advanced Dungeons & Dragons - Pool of Radiance (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Adventure Island II (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Adventure Island III (Europe) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Adventures of Dr. Franken, The (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Adventures of Rad Gravity, The (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "After Burner (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Ai Senshi Nicol (Asia) (Ja) (v1.1) (Kaiser) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Air Fortress (USA) (Beta) (1989-03-03).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Airball (USA) (Proto 1) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Airball (USA) (Proto 2) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Airball (USA) (Proto 3) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Aladdin (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Alfombra Magica, La (Spain) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Alien Syndrome (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "America Oudan Ultra Quiz - Shijou Saidai no Tatakai (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Arcadia VI (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Arctic Adventure - Penguin & Seal (Australia) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Asder - 20-in-1 (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Asterix (Europe) (En,Fr,De,Es,It).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Astyanax (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Atlantis no Nazo (Japan) (En) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Atlantis no Nazo (Japan) (En) (Virtual Console, Switch Online).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Auto-Upturn (Asia) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "BB Car (Taiwan) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "BMX Simulator (World) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Babel no Tou (Japan) (En) (Rev 1) (Namcot Collection).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Baby Boomer (Korea) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Baby Boomer (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bad News Baseball (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Baiwan Fuweng (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Balda (Russia) (Subor Keyboard) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Balda (Russia) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Balloon Monster (Europe, Asia) (En) (Mega Soft) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Baltron (Japan) (En) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bao Qingtian (Taiwan) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Baoxiao Sanguo (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Barbie (USA) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bard's Tale, The (Japan) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Baseball (USA, Europe) (Animal Crossing).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Baseball (USA, Europe).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bases Loaded (USA) (Beta) (1987-12-16).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bases Loaded (USA) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bases Loaded (USA) (Rev 2).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bashi Bazook - Morphoid Masher (USA) (Proto) (1989-05-29).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Batman - Return of the Joker (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Batman Returns (Europe) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "BattleCity (World) (Namcot Collection, Namco Museum Archives Vol 2).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Battleship (Europe) (En,Fr,De,Es).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Battletoads (Brazil) (En,Pt-BR) (Conector) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Battletoads-Double Dragon (USA, Europe) (Retro-Bit).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Beat 'n Box (Korea) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bee 52 (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Beetlejuice (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Best Keiba - Derby Stallion (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Best Play Pro Yakyuu (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Best Play Pro Yakyuu Special (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bible Adventures (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bible Adventures (USA) (v1.1) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bible Adventures (USA) (v1.2) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bible Adventures (USA) (v1.3) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bible Adventures (USA) (v1.4) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bible Adventures (USA) (v1.5) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bible Buffet (USA) (v6.0) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Big Nose Freaks Out (USA) (Unl) (Alt).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Big Nose Freaks Out (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Big Nose and the Witchdoctor (USA) (Beta) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Big Nose the Caveman (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bingo (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bio Force Ape (Japan) (En) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bio Force Ape (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bionic Commando (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Black Dragon (Korea) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Blackjack (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Blaster Master (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Blaster Master (USA, Europe) (Wii U Virtual Console).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Block Force (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Block Out (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bloque Magico, El (Spain) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Blues Brothers, The (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bomb Panic (Japan) (En) (Family BASIC) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bomberman II (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bonza (Russia) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bonza (Russia) (v1.1) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Boogerman (Taiwan) (En) (Beta) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Booky Man (Brazil) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Booky Man (Spain) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Boomerang Kid (World) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bowling (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Boxing + Soccer (Hong Kong) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Boxing + Soccer (Hong Kong) (En) (v1.1) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Brilliant Com Cocoma Pack 1 (Korea) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Brilliant Com Cocoma Pack 2 (Korea) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Brush Roller (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bubble Bath Babes (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bubble Bobble (Asia) (En) (v1.1) (Whirlwind Manu) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bubble Bobble (Europe) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "BugTris (Korea) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bugs Bunny Birthday Bash (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bugs Bunny Fun House (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Buzz & Waldog (USA) (Proto 1) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Buzz & Waldog (USA) (Proto 2) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "CJ's Elephant Antics (World) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Caltron - 6 in 1 (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Caltron - 9 in 1 (USA) (Proto) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Captain Comic - The Adventure (Europe) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Captain Comic - The Adventure (USA, Brazil) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Captain Skyhawk (USA) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Castle of Deceit (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Castlevania (USA) (Rev 1) (Virtual Console).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Castlevania (USA) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Castlevania III - Dracula's Curse (USA, Europe) (USA Wii Virtual Console, Wii U Virtual Console).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Caveman Ninja (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Challenge of the Dragon (Asia) (En) (Sachen) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Challenge of the Dragon (USA) (Color Dreams) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chaoji Da Fuweng (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Cheetahmen II (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chess Academy (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chessmaster, The (USA) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chester Field (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chester Field - Ankoku Shin e no Chousen (Japan) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chiller (Australia) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chiller (USA) (ShareData) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chiller (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chinese Checkers (Asia) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chinese Checkers (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chinese KungFu - Shaolin Warrior (Taiwan) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chip 'n Dale - Rescue Rangers (Europe) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chip 'n Dale - Rescue Rangers 2 (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chip's Challenge (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chongwu Baobao (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chongwu Da Jiazu - Buluo Fenzheng (Pet Family) (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chongwu Gaoda Zhan Ji (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chongwu Jinhua Shi (Pet Evolve) (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Choplifter (Japan) (En) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chu Da D (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chu Han Zhengba - The War Between Chu & Han (China) (0100396) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chu Han Zhengba - The War Between Chu & Han (China) (980005) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chu Liu Xiang - Xiang Shuai Chuanqi Zhi Xue Hai Piaoling (China) (FS005) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chu Liu Xiang - Xiang Shuai Chuanqi Zhi Xue Hai Piaoling (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Chuck Yeager's Fighter Combat (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Cobra Mission (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Color Dreams Color Test (USA) (Program) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Color a Dinosaur (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Colorful Dragon (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Columbus - Ougon no Yoake (Japan) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Contra Spirits (Taiwan) (En) (v1.1) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Corre Benny (Spain) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Cosmic Spacehead (Europe) (En,Fr,De,Es) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Cosmos Cop (Spain) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Cosmos Cop (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Crab Carry the Flag (Japan) (En) (Family BASIC) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Crackout (USA) (Proto) (PAL).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Crash 'n' the Boys - Street Challenge (World) (v1.1) (Evercade).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Crazy Land (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Creatom (Spain) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Crime Busters (Brazil) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "CrossFire (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Crossbow (USA) (Proto) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Crystal Commando (Korea) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Crystal Mines (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Crystalis (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Crystalis (USA, Europe) (SNK 40th Anniversary Collection).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Cvetnie Linii (Russia) (Subor Keyboard) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Da Fuweng II - Shanghai Daheng (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Da Hanghai VII (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dahua Sanguo (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dahua Shuihu (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dancing Blocks (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dangerous PENPEN (Japan) (En) (Family BASIC) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dao Shuai - Master Chu (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Daodan Tank (China) (En) (Rev 1) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dark (Japan) (En) (Family BASIC) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Darkwing Duck (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "David Crane's A Boy and His Blob - Trouble on Blobolonia (Europe) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Day Dreamin' Davey (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Days of Thunder (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Death Race (USA) (Beta) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Death Race (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Deathbots (USA) (Rev 1) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Deathbots (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Decathlon (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Defenders of Dynatron City (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dengeki - Big Bang! (Japan) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Desert Storm - Nightmare Snaps Soul (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Destroyer (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Destructor, El (Spain) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Devil World (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Di Shi Tian (China) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Die Bian - Incantation (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dig Dug (World) (Namcot Collection, Namco Museum Archives Vol 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dig Dug II (USA, Europe) (Namco Museum Archives Vol 2).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dig Dug II - Trouble in Paradise (USA, Europe) (Virtual Console).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Digger T. Rock - The Legend of the Lost City (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Digital Devil Story - Megami Tensei (Japan) (Rev 1) (Namcot Collection).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Digital Devil Story - Megami Tensei (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Digital Devil Story - Megami Tensei II (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Diguo Fengbao - Napoleon's War (China) (980100029) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Diguo Fengbao - Napoleon's War (China) (980340) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Diveman (Asia) (En) (Extract) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dizzy the Adventurer (USA) (Aladdin Compact Cartridge) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dizzy the Adventurer (World) (Evercade) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dong Dongnao 1 (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dong Dongnao II - Guozhong Yingwen (Yi) (Taiwan) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dongzhou Lie Guozhi (China) (960100577) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Donkey Kong (USA) (Rev 1) (e-Reader).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Donkey Kong (World) (Rev 1) (Animal Crossing).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Donkey Kong (World) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Donkey Kong - Original Edition (USA, Europe) (3DS Virtual Console).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Donkey Kong Classics (USA, Europe).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Donkey Kong Jr. (USA) (Rev 1) (e-Reader).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Donkey Kong Jr. (World) (Rev 1) (Animal Crossing).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Donkey Kong Jr. (World) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Donkey Kong Jr. Math (USA, Europe).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dooly Bravo Land (Korea) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Doraemon (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dou Zhi Pinpan - Wisdom Boy (Taiwan) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Double Dragon (Japan) (En) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Double Dragon (World) (v1.1) (Evercade).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Double Dragon II - The Revenge (USA) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Double Dragon III - The Rosetta Stone (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Double Dribble (USA) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Double Strike - Aerial Attack Force (USA) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Double Strike - Aerial Attack Force (USA) (v1.1) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dr. Mario (Japan, USA) (En) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dr. Mario (Japan, USA) (En).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Drac's Night Out (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Ball - Le Secret du Dragon (France) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Ball 3 - Gokuu Den (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Ball Z - Kyoushuu! Saiya Jin (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Ball Z - Super Butouden 2 (Taiwan) (Ja) (v1.1) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Ball Z 5 (Taiwan) (En,Zh-Hant) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Ball Z II - Gekishin Freeza!! (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Buster (World) (Namcot Collection, Namco Museum Archives Vol 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Buster II - Yami no Fuuin (USA, Europe) (Namco Museum Archives Vol 2).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Ninja (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Quest III - Soshite Densetsu e... (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Quest IV - Michibikareshi Monotachi (Japan) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Warrior (USA) (Rev 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Warrior II (USA) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon Wars (USA) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon, The (Asia) (En,Ar) (Extract) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dragon, The (Taiwan) (En,Ar) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dream Fighter (Asia) (En) (Extract) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dream Fighter (Asia) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dreamworld Pogie (USA, Europe) (Proto).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dropzone (USA) (Proto) (1992-10-06).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Druaga no Tou (World) (Namcot Collection, Namco Museum Archives Vol 1).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Duck (Taiwan) (En) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Duck Maze (Australia) (Unl).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "DuckTales 2 (Europe) (Beta).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "All-Star Baseball 97 featuring Frank Thomas (USA).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Kid Paddle (Europe) (Fr,Nl) (Beta 3).zip",
+			"system": "GBA"
+		},
+		{
+			"filename": "Naniwa Kinyuudou - Aoki Yuji no Seken Munazanyou (Japan).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "CT Special Forces 3 - Bioterror (Europe) (En,Fr,De,Es,It,Nl).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Cannon Fodder (Europe) (En,Fr,De,Es,It).zip",
+			"system": "GBC"
+		},
+		{
+			"filename": "Final Fantasy IV - Easy Type (Japan).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Super 1.000.000-in-1 (Asia) (En) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Super Contra II (China) (En) (1993) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Star Wars - Demolition (USA) (Demo).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Roswell Conspiracies - Aliens, Myths & Legends (Europe) (En,Fr,De).zip",
+			"system": "GBC"
+		},
+		{
+			"filename": "Army Men - Operation Meltdown (Europe) (En,Fr,De,Es,It).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Dracula Densetsu II (Japan).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "Aladdin (Europe).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "WRC - FIA World Rally Championship Arcade (Europe) (En,Fr,De,Es,It,Nl,Pt,Sv,No,Da,Fi).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Math Gallery - Collection 2 (USA).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Bakutou Dochers - Bumps-jima wa Oosawagi (Japan).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Nekketsu Kakutou Densetsu (Japan).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Bionicle - Maze of Shadows (USA).zip",
+			"system": "GBA"
+		},
+		{
+			"filename": "Virus - It Is Aware (Europe) (En,Fr,De,Es,It).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Werewolf - The Last Warrior (Europe).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Mortal Kombat 3 (Europe).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "Takahashi Meijin no Bouken-jima (Asia) (Ja) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Air Diver (Japan) (En).zip",
+			"system": "MD"
+		},
+		{
+			"filename": "Thunder Pro Wrestling Retsuden (Japan).zip",
+			"system": "MD"
+		},
+		{
+			"filename": "Thrasher - Skate and Destroy (Australia).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Jumping Flash! Aloha Danshaku Funky Daisakusen no Maki (Japan).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Monster in My Pocket (Asia) (En) (M-I6) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Street Fighter II (USA, Europe) (SGB Enhanced).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "F.A. Premier League Football Manager 2000, The (Europe).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Disney Aladdin - La Revanche de Nasira (France).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "LEGO Island 2 - The Brickster's Revenge (USA) (En,Fr,Es).zip",
+			"system": "GBC"
+		},
+		{
+			"filename": "Road Rash - Jailbreak (USA).zip",
+			"system": "GBA"
+		},
+		{
+			"filename": "Payne Stewart Pro Golf (USA) (Proto 1).zip",
+			"system": "MD"
+		},
+		{
+			"filename": "Gachasute! Dino Device - Red (Japan).zip",
+			"system": "GBA"
+		},
+		{
+			"filename": "Pinobee (Europe) (En,Fr,De,Es,It).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Beyblade V-Force - Ultimate Blader Jam (USA).zip",
+			"system": "GBA"
+		},
+		{
+			"filename": "OutRunners (USA) (Sega Channel).zip",
+			"system": "MD"
+		},
+		{
+			"filename": "Space Invaders (Australia).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Front Line (Japan) (En).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "First Samurai (USA).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Yu-Gi-Oh! Duel Monsters 4 - Battle of Great Duelist - Yuugi Deck (Japan).zip",
+			"system": "GBC"
+		},
+		{
+			"filename": "Formula 1 97 (Europe) (En,Fr,De,Es,It).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Chibi Maruko-chan - Uki Uki Shopping (Japan).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Puyo Puyo Tsuu (Japan).zip",
+			"system": "MD"
+		},
+		{
+			"filename": "Spy Hunter (USA).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Valis (World) (Evercade).zip",
+			"system": "MD"
+		},
+		{
+			"filename": "NCAA GameBreaker 98 (USA).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Altered Beast (USA, Europe) (Sega 3D Classics).zip",
+			"system": "MD"
+		},
+		{
+			"filename": "Incredible Crash Dummies, The (Europe).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Gensou Suikoden II (Japan).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Mahjong Club (Japan).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Mario Is Missing! (Germany).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Yakuman (Japan).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "Mario Paint (Japan, USA) (En).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Dragon Ninja (Japan).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "NBA Live 99 (France).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Shoot the Goof (Asia) (En) (Extract) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Men in Black 2 - The Series (USA) (En,Fr,De).zip",
+			"system": "GBC"
+		},
+		{
+			"filename": "Xevious (Europe).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Mortal Kombat II (USA).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "BC Racers (Europe) (En,Fr,De).zip",
+			"system": "MD_SEGA_CD"
+		},
+		{
+			"filename": "Another Bible (Japan) (SGB Enhanced).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "Jackie Chan Stuntmaster (USA).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Pop'n TwinBee (USA, Europe) (Switch Online).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Shui Guo Li (Asia) (En) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Tokyo Game Show '98 Autumn - Sunsoft Shinsaku Title Taikenban (Japan).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Front Mission 3 (Japan) (Demo).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Spider-Man 2 (USA, Europe).zip",
+			"system": "GBA"
+		},
+		{
+			"filename": "Arcade Hits - Suiko Enbu - Outlaws of the Lost Dynasty (Japan).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Star Luster (Japan) (Namcot Collection).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Dynamite Batman (Japan) (En).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Gex - Deep Cover Gecko (Europe) (Demo).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Chaoyiliu Yan Shan Bei Weiqi (China) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Tougi Ou - King Colossus (Japan).zip",
+			"system": "MD"
+		},
+		{
+			"filename": "Home Improvement - Power Tool Pursuit! (USA).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Legend of Prince Valiant, The (Europe) (En,Fr,De).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "Alien Olympics (Europe) (Beta 1).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "PlayStation Zone CD Vol. 11 (Germany).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Mario's Picross (USA, Europe) (SGB Enhanced).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "Toxic Crusaders (USA).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "Caravan Shooting Collection (Japan) (En).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Hyper PlayStation Re-mix 1998 No. 2 (Japan).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Shining Force CD (Japan).zip",
+			"system": "MD_SEGA_CD"
+		},
+		{
+			"filename": "Ten made Jack - Odoroki Mamenoki Daitoubou!! (Japan).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Tantei Jinguuji Saburou - Kiken na Futari - Zenpen (Japan) (Virtual Console).zip",
+			"system": "FC_FDS"
+		},
+		{
+			"filename": "Goukaku Boy Series - Shikakui Atama o Maruku Suru - Suuji de Asobou Sansuu Hen (Japan).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "Jungle Book, The (USA).zip",
+			"system": "MD"
+		},
+		{
+			"filename": "Yuuyami Doori Tankentai (Japan) (Demo).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Kirby's Pinball Land (USA, Europe).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "Evergreen Avenue (Japan).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Challenger (Japan) (En).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Silent Bomber (Europe).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Side Pocket (Russia) (Pirate).zip",
+			"system": "FC_CART"
+		},
+		{
+			"filename": "Super Battletank (Europe).zip",
+			"system": "GB"
+		},
+		{
+			"filename": "Iron Commando (World) (v1.1) (Steam) (NTSC).zip",
+			"system": "SGB"
+		},
+		{
+			"filename": "Bio F.R.E.A.K.S. (USA).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "SuperLite 1500 Series - Cyber Daisenryaku - Shutsugeki! Haruka-tai (Japan).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "SSX 3 (USA, Europe).zip",
+			"system": "GBA"
+		},
+		{
+			"filename": "PlayStation-Pepsi Sampler Disc (USA).zip",
+			"system": "PS"
+		},
+		{
+			"filename": "Shougi Shodan Icchokusen (Japan).zip",
+			"system": "PCE"
+		}
+	]
+}

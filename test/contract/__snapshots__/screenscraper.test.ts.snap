@@ -1,0 +1,87 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ScreenScraper API > API configuration > documents expected API behavior 1`] = `
+{
+  "mediaTypes": [
+    "box-2D",
+    "box-3D",
+    "ss",
+    "sstitle",
+    "video",
+    "video-normalized",
+  ],
+  "optionalParams": [
+    "ssid",
+    "sspassword",
+    "crc",
+    "md5",
+    "sha1",
+  ],
+  "outputFormat": "json",
+  "requiredParams": [
+    "devid",
+    "devpassword",
+    "softname",
+    "output",
+    "romtype",
+    "systemeid",
+    "romnom",
+  ],
+  "searchEndpoint": "https://www.screenscraper.fr/api2/jeuInfos.php",
+}
+`;
+
+exports[`ScreenScraper API > system mappings > ROM_EXTENSIONS_BY_SYSTEM matches snapshot 1`] = `
+{
+  "FC": [
+    ".nes",
+    ".fds",
+  ],
+  "GB": [
+    ".gb",
+  ],
+  "GBA": [
+    ".gba",
+  ],
+  "GBC": [
+    ".gbc",
+  ],
+  "MD": [
+    ".md",
+    ".bin",
+    ".gen",
+    ".smd",
+  ],
+  "PCE": [
+    ".pce",
+  ],
+  "PS": [
+    ".bin",
+    ".cue",
+    ".chd",
+    ".pbp",
+    ".iso",
+    ".img",
+    ".ccd",
+    ".mdf",
+    ".mds",
+  ],
+  "SGB": [
+    ".gb",
+    ".gbc",
+  ],
+}
+`;
+
+exports[`ScreenScraper API > system mappings > SCREENSCRAPER_SYSTEMS matches snapshot 1`] = `
+{
+  "FC": 3,
+  "GB": 9,
+  "GBA": 12,
+  "GBC": 10,
+  "MD": 1,
+  "PCE": 31,
+  "PS": 57,
+  "SGB": 127,
+}
+`;

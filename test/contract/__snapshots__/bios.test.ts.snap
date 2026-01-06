@@ -1,0 +1,113 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`BIOS URLs > configuration stability > BIOS entries match expected snapshot 1`] = `
+[
+  {
+    "filename": "disksys.rom",
+    "rename": undefined,
+    "system": "FC",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "gb_bios.bin",
+    "rename": undefined,
+    "system": "GB",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "gba_bios.bin",
+    "rename": undefined,
+    "system": "GBA",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "gbc_bios.bin",
+    "rename": undefined,
+    "system": "GBC",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "bios_CD_E.bin",
+    "rename": undefined,
+    "system": "MD",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "bios_CD_J.bin",
+    "rename": undefined,
+    "system": "MD",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "bios_CD_U.bin",
+    "rename": undefined,
+    "system": "MD",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "syscard3.pce",
+    "rename": undefined,
+    "system": "PCE",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "bios.min",
+    "rename": undefined,
+    "system": "PKM",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "prboom.wad",
+    "rename": undefined,
+    "system": "PRBOOM",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "psxonpsp660.bin",
+    "rename": "psxonpsp660.bin",
+    "system": "PS",
+    "urlHost": "github.com",
+  },
+  {
+    "filename": "sgb.bios",
+    "rename": "sgb.bios",
+    "system": "SGB",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "kick34005.A500",
+    "rename": undefined,
+    "system": "PUAE",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "kick40063.A600",
+    "rename": undefined,
+    "system": "PUAE",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "kick40068.A1200",
+    "rename": undefined,
+    "system": "PUAE",
+    "urlHost": "raw.githubusercontent.com",
+  },
+  {
+    "filename": "kick40068.A4000",
+    "rename": "kick40068.A4000",
+    "system": "PUAE",
+    "urlHost": "raw.githubusercontent.com",
+  },
+]
+`;
+
+exports[`BIOS URLs > configuration stability > symlink entries match expected snapshot 1`] = `
+[
+  {
+    "label": "MGBA: symlink to GBA BIOS",
+    "linkPath": "MGBA/gba_bios.bin",
+    "system": "MGBA",
+    "targetPath": "GBA/gba_bios.bin",
+  },
+]
+`;

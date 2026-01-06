@@ -5,3 +5,4 @@ dist
 .log/
 _card
 .retrosdrc
+coverage

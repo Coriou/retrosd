@@ -1,0 +1,51 @@
+{
+	"description": "Catalog statistics for reference",
+	"exportedAt": "2026-01-06T10:15:27.816Z",
+	"systems": [
+		{
+			"system": "PS",
+			"count": 10886
+		},
+		{
+			"system": "FC_CART",
+			"count": 4464
+		},
+		{
+			"system": "SGB",
+			"count": 4087
+		},
+		{
+			"system": "GBA",
+			"count": 3478
+		},
+		{
+			"system": "MD",
+			"count": 2786
+		},
+		{
+			"system": "GB",
+			"count": 1958
+		},
+		{
+			"system": "GBC",
+			"count": 1958
+		},
+		{
+			"system": "MD_SEGA_CD",
+			"count": 545
+		},
+		{
+			"system": "PCE",
+			"count": 462
+		},
+		{
+			"system": "FC_FDS",
+			"count": 404
+		},
+		{
+			"system": "PKM",
+			"count": 44
+		}
+	],
+	"totalRoms": 31072
+}

@@ -1,0 +1,227 @@
+{
+	"description": "ScreenScraper API response samples for format validation",
+	"exportedAt": "2026-01-06T10:15:27.810Z",
+	"count": 20,
+	"samples": [
+		{
+			"cacheKey": "9:name:konamic golf (japan) (en)",
+			"gameId": 71061,
+			"gameName": "Ultra Golf",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=71061&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=71061&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=71061&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=71061&media=video"
+			}
+		},
+		{
+			"cacheKey": "10:name:rugrats movie, the (usa) (sgb enhanced) (gb compatible)",
+			"gameId": 37179,
+			"gameName": "Rugrats Movie, The",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37179&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37179&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37179&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37179&media=video"
+			}
+		},
+		{
+			"cacheKey": "9:name:winter olympic games (usa)",
+			"gameId": 65239,
+			"gameName": "Xvii Olympic Winter Games, The - Lillehammer 1994",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=65239&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=65239&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=65239&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=65239&media=video"
+			}
+		},
+		{
+			"cacheKey": "9:name:sa-ga 3 - jikuu no hasha (world) (ja) (collection of saga)",
+			"gameId": 3049,
+			"gameName": "Final Fantasy Legend 3",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3049&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3049&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3049&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3049&media=video"
+			}
+		},
+		{
+			"cacheKey": "1:name:pocahontas (usa)",
+			"gameId": 132,
+			"gameName": "Pocahontas",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=132&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=132&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=132&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=132&media=video"
+			}
+		},
+		{
+			"cacheKey": "10:name:all-star baseball 2001 (usa)",
+			"gameId": 37029,
+			"gameName": "All-star Baseball 2001",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37029&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37029&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37029&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37029&media=video"
+			}
+		},
+		{
+			"cacheKey": "1:name:crack down (usa)",
+			"gameId": 257,
+			"gameName": "Crack Down",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=257&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=257&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=257&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=257&media=video"
+			}
+		},
+		{
+			"cacheKey": "9:name:earthworm jim (europe)",
+			"gameId": 3128,
+			"gameName": "Earthworm Jim",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3128&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3128&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3128&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3128&media=video"
+			}
+		},
+		{
+			"cacheKey": "1:name:trampoline terror! (usa)",
+			"gameId": 624,
+			"gameName": "Trampoline Terror",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=624&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=624&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=624&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=624&media=video"
+			}
+		},
+		{
+			"cacheKey": "9:name:migrain (japan) (en)",
+			"gameId": 3679,
+			"gameName": "Brainbender",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3679&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3679&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3679&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3679&media=video"
+			}
+		},
+		{
+			"cacheKey": "9:name:mega man iii (usa)",
+			"gameId": 3234,
+			"gameName": "Mega Man 3",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3234&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3234&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3234&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3234&media=video"
+			}
+		},
+		{
+			"cacheKey": "10:name:madden nfl 2002 (usa)",
+			"gameId": 37120,
+			"gameName": "Madden NFL 2002",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37120&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37120&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37120&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=37120&media=video"
+			}
+		},
+		{
+			"cacheKey": "1:name:skeleton krew (usa)",
+			"gameId": 398,
+			"gameName": "Skeleton Krew",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=398&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=398&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=398&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=398&media=video"
+			}
+		},
+		{
+			"cacheKey": "12:name:samurai deeper kyo (usa)",
+			"gameId": 4135,
+			"gameName": "Samurai Deeper Kyo",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=12&jeuid=4135&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=12&jeuid=4135&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=12&jeuid=4135&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=12&jeuid=4135&media=video"
+			}
+		},
+		{
+			"cacheKey": "12:name:medabots - metabee (usa) (virtual console)",
+			"gameId": 84142,
+			"gameName": "Medabots - Metabee",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=12&jeuid=84142&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=12&jeuid=84142&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=12&jeuid=84142&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=12&jeuid=84142&media=video"
+			}
+		},
+		{
+			"cacheKey": "9:name:ducktales (europe)",
+			"gameId": 3002,
+			"gameName": "Disney's Ducktales",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3002&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3002&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3002&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3002&media=video"
+			}
+		},
+		{
+			"cacheKey": "1:name:berenstain bears' camping adventure, the (usa) (sega channel)",
+			"gameId": 728,
+			"gameName": "Berenstain Bears' Camping Adventure, The",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=728&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=728&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=728&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=728&media=video"
+			}
+		},
+		{
+			"cacheKey": "1:name:chessmaster, the (usa) (sega channel)",
+			"gameId": 481685,
+			"gameName": "Chessmaster, The",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=481685&media=box-2D(ss)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=481685&media=box-2D-back(ss)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=481685&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=1&jeuid=481685&media=video"
+			}
+		},
+		{
+			"cacheKey": "9:name:dragon's lair (japan) (en)",
+			"gameId": 3331,
+			"gameName": "Dragon's Lair - The Legend",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3331&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3331&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3331&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=9&jeuid=3331&media=video"
+			}
+		},
+		{
+			"cacheKey": "10:name:crystalis (usa)",
+			"gameId": 36892,
+			"gameName": "Crystalis",
+			"mediaUrls": {
+				"boxFront": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=36892&media=box-2D(us)",
+				"boxBack": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=36892&media=box-2D-back(us)",
+				"screenshot": "https://neoclone.screenscraper.fr/api2/mediaJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=36892&media=ss(wor)",
+				"video": "https://neoclone.screenscraper.fr/api2/mediaVideoJeu.php?devid=4and25carateres&devpassword=nfR1ANLhp3y&softname=retrosd/2.0.0&ssid=4and25carateres&sspassword=4and25carateres&systemeid=10&jeuid=36892&media=video"
+			}
+		}
+	]
+}

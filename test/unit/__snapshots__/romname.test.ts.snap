@@ -1,0 +1,1274 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseRomFilenameParts > real catalog filenames > parses '93 Zuixin Yizhi Chaoji Jinka 4-in-1 (China) (Unl).zip correctly 1`] = `
+{
+  "baseName": "'93 Zuixin Yizhi Chaoji Jinka 4-in-1 (China) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "cn",
+  ],
+  "regions": [
+    "China",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "'93 Zuixin Yizhi Chaoji Jinka 4-in-1",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 2-in-1 - Zhili Pintu + Dudu Wawa Da Maoxian (China) (Unl).zip correctly 1`] = `
+{
+  "baseName": "2-in-1 - Zhili Pintu + Dudu Wawa Da Maoxian (China) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "cn",
+  ],
+  "regions": [
+    "China",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "2-in-1 - Zhili Pintu + Dudu Wawa Da Maoxian",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 3-in-1 Supergun (Asia) (En) (Unl).zip correctly 1`] = `
+{
+  "baseName": "3-in-1 Supergun (Asia) (En) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "asi",
+  ],
+  "regions": [
+    "Asia",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "3-in-1 Supergun",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 4 Nin Uchi Mahjong (Japan) (Rev 1).zip correctly 1`] = `
+{
+  "baseName": "4 Nin Uchi Mahjong (Japan) (Rev 1)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": false,
+  },
+  "languages": [],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [],
+  "title": "4 Nin Uchi Mahjong",
+  "version": "Rev 1",
+  "versionInfo": {
+    "kind": "rev",
+    "parts": [
+      1,
+    ],
+    "raw": "Rev 1",
+  },
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 5-in-1 (1993) (Asia) (En) (Unl).zip correctly 1`] = `
+{
+  "baseName": "5-in-1 (1993) (Asia) (En) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "asi",
+  ],
+  "regions": [
+    "Asia",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "5-in-1",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 6-in-1 (Asia) (En,Ja) (SV-1021) (Pirate).zip correctly 1`] = `
+{
+  "baseName": "6-in-1 (Asia) (En,Ja) (SV-1021) (Pirate)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+    "ja",
+  ],
+  "regionCodes": [
+    "asi",
+  ],
+  "regions": [
+    "Asia",
+  ],
+  "tags": [
+    "Pirate",
+  ],
+  "title": "6-in-1",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 8 Eyes (USA, Europe) (Pixel Heart).zip correctly 1`] = `
+{
+  "baseName": "8 Eyes (USA, Europe) (Pixel Heart)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": false,
+  },
+  "languages": [],
+  "regionCodes": [
+    "us",
+    "eu",
+  ],
+  "regions": [
+    "USA",
+    "Europe",
+  ],
+  "tags": [],
+  "title": "8 Eyes",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 10-Yard Fight (Japan) (En) (Rev 1).zip correctly 1`] = `
+{
+  "baseName": "10-Yard Fight (Japan) (En) (Rev 1)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": false,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [],
+  "title": "10-Yard Fight",
+  "version": "Rev 1",
+  "versionInfo": {
+    "kind": "rev",
+    "parts": [
+      1,
+    ],
+    "raw": "Rev 1",
+  },
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 10-Yard Fight (USA, Europe).zip correctly 1`] = `
+{
+  "baseName": "10-Yard Fight (USA, Europe)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": false,
+  },
+  "languages": [],
+  "regionCodes": [
+    "us",
+    "eu",
+  ],
+  "regions": [
+    "USA",
+    "Europe",
+  ],
+  "tags": [],
+  "title": "10-Yard Fight",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 23-in-1 Super Game (Europe) (En,Ja) (Pirate).zip correctly 1`] = `
+{
+  "baseName": "23-in-1 Super Game (Europe) (En,Ja) (Pirate)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+    "ja",
+  ],
+  "regionCodes": [
+    "eu",
+  ],
+  "regions": [
+    "Europe",
+  ],
+  "tags": [
+    "Pirate",
+  ],
+  "title": "23-in-1 Super Game",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 29~10MG-in-1 (Asia) (En,Ja) (Pirate).zip correctly 1`] = `
+{
+  "baseName": "29~10MG-in-1 (Asia) (En,Ja) (Pirate)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+    "ja",
+  ],
+  "regionCodes": [
+    "asi",
+  ],
+  "regions": [
+    "Asia",
+  ],
+  "tags": [
+    "Pirate",
+  ],
+  "title": "29~10MG-in-1",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 58-in-1 (Asia) (En,Zh) (Pirate).zip correctly 1`] = `
+{
+  "baseName": "58-in-1 (Asia) (En,Zh) (Pirate)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+    "zh",
+  ],
+  "regionCodes": [
+    "asi",
+  ],
+  "regions": [
+    "Asia",
+  ],
+  "tags": [
+    "Pirate",
+  ],
+  "title": "58-in-1",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 75 BinGuo (Taiwan) (Unl).zip correctly 1`] = `
+{
+  "baseName": "75 BinGuo (Taiwan) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "75 BinGuo",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 75 Bingo (Asia) (En) (Unl).zip correctly 1`] = `
+{
+  "baseName": "75 Bingo (Asia) (En) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "asi",
+  ],
+  "regions": [
+    "Asia",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "75 Bingo",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 100-in-1 Real Game (China) (En,Ja) (Pirate).zip correctly 1`] = `
+{
+  "baseName": "100-in-1 Real Game (China) (En,Ja) (Pirate)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+    "ja",
+  ],
+  "regionCodes": [
+    "cn",
+  ],
+  "regions": [
+    "China",
+  ],
+  "tags": [
+    "Pirate",
+  ],
+  "title": "100-in-1 Real Game",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 168-in-1 (Asia) (En,Ja) (AB CARD-15) (Pirate).zip correctly 1`] = `
+{
+  "baseName": "168-in-1 (Asia) (En,Ja) (AB CARD-15) (Pirate)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+    "ja",
+  ],
+  "regionCodes": [
+    "asi",
+  ],
+  "regions": [
+    "Asia",
+  ],
+  "tags": [
+    "Pirate",
+  ],
+  "title": "168-in-1",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 777 Lucky Bingo (Asia) (En) (Unl).zip correctly 1`] = `
+{
+  "baseName": "777 Lucky Bingo (Asia) (En) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "asi",
+  ],
+  "regions": [
+    "Asia",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "777 Lucky Bingo",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 777 Xingyun Lunpan (Taiwan) (En) (Unl).zip correctly 1`] = `
+{
+  "baseName": "777 Xingyun Lunpan (Taiwan) (En) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "777 Xingyun Lunpan",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 777 Xingyun Lunpan (Taiwan) (v1.1) (Unl).zip correctly 1`] = `
+{
+  "baseName": "777 Xingyun Lunpan (Taiwan) (v1.1) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "777 Xingyun Lunpan",
+  "version": "v1.1",
+  "versionInfo": {
+    "kind": "ver",
+    "parts": [
+      1,
+      1,
+    ],
+    "raw": "v1.1",
+  },
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 1942 (Japan, USA) (En).zip correctly 1`] = `
+{
+  "baseName": "1942 (Japan, USA) (En)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": false,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "jp",
+    "us",
+  ],
+  "regions": [
+    "Japan",
+    "USA",
+  ],
+  "tags": [],
+  "title": "1942",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 1943 - The Battle of Midway (Japan) (Beta).zip correctly 1`] = `
+{
+  "baseName": "1943 - The Battle of Midway (Japan) (Beta)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": true,
+    "unlicensed": false,
+  },
+  "languages": [],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [
+    "Beta",
+  ],
+  "title": "1943 - The Battle of Midway",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 1991 Du Ma Racing (Taiwan) (Super Mega) (Unl).zip correctly 1`] = `
+{
+  "baseName": "1991 Du Ma Racing (Taiwan) (Super Mega) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "1991 Du Ma Racing",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 1991 Du Ma Racing (Taiwan) (TXC) (Unl).zip correctly 1`] = `
+{
+  "baseName": "1991 Du Ma Racing (Taiwan) (TXC) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "1991 Du Ma Racing",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 1992 Super HiK 3-in-1 (Asia) (En,Ja) (Pirate).zip correctly 1`] = `
+{
+  "baseName": "1992 Super HiK 3-in-1 (Asia) (En,Ja) (Pirate)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+    "ja",
+  ],
+  "regionCodes": [
+    "asi",
+  ],
+  "regions": [
+    "Asia",
+  ],
+  "tags": [
+    "Pirate",
+  ],
+  "title": "1992 Super HiK 3-in-1",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 1996 Yingyu CAI 3-in-1 (China) (Unl).zip correctly 1`] = `
+{
+  "baseName": "1996 Yingyu CAI 3-in-1 (China) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "cn",
+  ],
+  "regions": [
+    "China",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "1996 Yingyu CAI 3-in-1",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 2010 Street Fighter (Japan) (Beta).zip correctly 1`] = `
+{
+  "baseName": "2010 Street Fighter (Japan) (Beta)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": true,
+    "unlicensed": false,
+  },
+  "languages": [],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [
+    "Beta",
+  ],
+  "title": "2010 Street Fighter",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses 9999999-in-1 - World Series Championship (Taiwan) (En) (Rev 1) (Pirate).zip correctly 1`] = `
+{
+  "baseName": "9999999-in-1 - World Series Championship (Taiwan) (En) (Rev 1) (Pirate)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Pirate",
+  ],
+  "title": "9999999-in-1 - World Series Championship",
+  "version": "Rev 1",
+  "versionInfo": {
+    "kind": "rev",
+    "parts": [
+      1,
+    ],
+    "raw": "Rev 1",
+  },
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Bishoujo Senshi Girl Fighting (Taiwan) (En) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Bishoujo Senshi Girl Fighting (Taiwan) (En) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Bishoujo Senshi Girl Fighting",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Hanafuda Club (Japan) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Hanafuda Club (Japan) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Hanafuda Club",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Kyuukyoku Mahjong 2 (Taiwan) (Ge De) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Kyuukyoku Mahjong 2 (Taiwan) (Ge De) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Kyuukyoku Mahjong 2",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Kyuukyoku Mahjong 2 (Taiwan) (Ka Sheng) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Kyuukyoku Mahjong 2 (Taiwan) (Ka Sheng) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Kyuukyoku Mahjong 2",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Mahjong Club (Japan) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Mahjong Club (Japan) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Mahjong Club",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Mahjong Club (Japan) (v1.1) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Mahjong Club (Japan) (v1.1) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Mahjong Club",
+  "version": "v1.1",
+  "versionInfo": {
+    "kind": "ver",
+    "parts": [
+      1,
+      1,
+    ],
+    "raw": "v1.1",
+  },
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Mahjong Club (Taiwan) (Ja) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Mahjong Club (Taiwan) (Ja) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "ja",
+  ],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Mahjong Club",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Pachi-Slot (Taiwan) (Ja) (Idea-Tek) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Pachi-Slot (Taiwan) (Ja) (Idea-Tek) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "ja",
+  ],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Pachi-Slot",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Pachi-Slot - Big Chance (Japan) (Rev 1) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Pachi-Slot - Big Chance (Japan) (Rev 1) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Pachi-Slot - Big Chance",
+  "version": "Rev 1",
+  "versionInfo": {
+    "kind": "rev",
+    "parts": [
+      1,
+    ],
+    "raw": "Rev 1",
+  },
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Pachi-Slot - Big Chance (Japan) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Pachi-Slot - Big Chance (Japan) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Pachi-Slot - Big Chance",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Poker (Japan) (Rev 1) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Poker (Japan) (Rev 1) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Poker",
+  "version": "Rev 1",
+  "versionInfo": {
+    "kind": "rev",
+    "parts": [
+      1,
+    ],
+    "raw": "Rev 1",
+  },
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Poker (Japan) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Poker (Japan) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Poker",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Soccer (Japan) (En) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Soccer (Japan) (En) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Soccer",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses AV Super Real Pachinko (Japan) (Unl).zip correctly 1`] = `
+{
+  "baseName": "AV Super Real Pachinko (Japan) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "jp",
+  ],
+  "regions": [
+    "Japan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "AV Super Real Pachinko",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses Action 52 (USA) (Rev A) (Unl).zip correctly 1`] = `
+{
+  "baseName": "Action 52 (USA) (Rev A) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "us",
+  ],
+  "regions": [
+    "USA",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "Action 52",
+  "version": "Rev A",
+  "versionInfo": {
+    "kind": "rev",
+    "letter": "A",
+    "parts": [
+      1,
+    ],
+    "raw": "Rev A",
+  },
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses Action 52 (USA) (Rev B) (Unl).zip correctly 1`] = `
+{
+  "baseName": "Action 52 (USA) (Rev B) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "us",
+  ],
+  "regions": [
+    "USA",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "Action 52",
+  "version": "Rev B",
+  "versionInfo": {
+    "kind": "rev",
+    "letter": "B",
+    "parts": [
+      2,
+    ],
+    "raw": "Rev B",
+  },
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses Action 52 (USA) (Unl).zip correctly 1`] = `
+{
+  "baseName": "Action 52 (USA) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [],
+  "regionCodes": [
+    "us",
+  ],
+  "regions": [
+    "USA",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "Action 52",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses Adam & Eve (Spain) (En) (Unl).zip correctly 1`] = `
+{
+  "baseName": "Adam & Eve (Spain) (En) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "sp",
+  ],
+  "regions": [
+    "Spain",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "Adam & Eve",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses Adam & Eve (Taiwan) (En) (Unl).zip correctly 1`] = `
+{
+  "baseName": "Adam & Eve (Taiwan) (En) (Unl)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": true,
+  },
+  "languages": [
+    "en",
+  ],
+  "regionCodes": [
+    "tw",
+  ],
+  "regions": [
+    "Taiwan",
+  ],
+  "tags": [
+    "Unl",
+  ],
+  "title": "Adam & Eve",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses Addams Family, The (Europe) (En,Fr,De).zip correctly 1`] = `
+{
+  "baseName": "Addams Family, The (Europe) (En,Fr,De)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": false,
+    "unlicensed": false,
+  },
+  "languages": [
+    "en",
+    "fr",
+    "de",
+  ],
+  "regionCodes": [
+    "eu",
+  ],
+  "regions": [
+    "Europe",
+  ],
+  "tags": [],
+  "title": "Addams Family, The",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses Addams Family, The (USA) (Beta) (1991-08-02).zip correctly 1`] = `
+{
+  "baseName": "Addams Family, The (USA) (Beta) (1991-08-02)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": true,
+    "unlicensed": false,
+  },
+  "languages": [],
+  "regionCodes": [
+    "us",
+  ],
+  "regions": [
+    "USA",
+  ],
+  "tags": [
+    "Beta",
+  ],
+  "title": "Addams Family, The",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses Advanced Dungeons & Dragons - Heroes of the Lance (USA) (Beta).zip correctly 1`] = `
+{
+  "baseName": "Advanced Dungeons & Dragons - Heroes of the Lance (USA) (Beta)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": true,
+    "unlicensed": false,
+  },
+  "languages": [],
+  "regionCodes": [
+    "us",
+  ],
+  "regions": [
+    "USA",
+  ],
+  "tags": [
+    "Beta",
+  ],
+  "title": "Advanced Dungeons & Dragons - Heroes of the Lance",
+}
+`;
+
+exports[`parseRomFilenameParts > real catalog filenames > parses Advanced Dungeons & Dragons - Hillsfar (USA) (Beta).zip correctly 1`] = `
+{
+  "baseName": "Advanced Dungeons & Dragons - Hillsfar (USA) (Beta)",
+  "flags": {
+    "hack": false,
+    "homebrew": false,
+    "prerelease": true,
+    "unlicensed": false,
+  },
+  "languages": [],
+  "regionCodes": [
+    "us",
+  ],
+  "regions": [
+    "USA",
+  ],
+  "tags": [
+    "Beta",
+  ],
+  "title": "Advanced Dungeons & Dragons - Hillsfar",
+}
+`;
