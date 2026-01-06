@@ -183,7 +183,89 @@ npm run sync-db -- /path/to/sdcard --quiet
 
 ---
 
-### 6. Format Conversion (CHD) ✅
+### 6. Maintenance: Tidy (Keep Everything Tidy) ✅
+
+**What it does:**
+
+- Refreshes the database (remote catalogs + local ROM presence)
+- Optionally generates missing metadata sidecars (or refreshes all)
+- Optionally scrapes artwork from ScreenScraper
+- Designed for periodic maintenance runs without unnecessary writes by default
+
+**Why it matters:**
+
+- Single command for comprehensive maintenance
+- Default behavior is safe: no unwanted rewrites, no API calls without opt-in
+- Can scope to specific systems to reduce runtime
+- Keeps your library metadata current and complete
+
+**Usage:**
+
+```bash
+# Minimal maintenance: just refresh database (fast, safe)
+retrosd tidy /path/to/sdcard
+
+# With metadata generation (missing only, no overwrites)
+retrosd tidy /path/to/sdcard --metadata
+
+# Refresh metadata for all ROMs (including existing files)
+retrosd tidy /path/to/sdcard --metadata --metadata-mode refresh
+
+# Include hashes (slow, but enables integrity checking)
+retrosd tidy /path/to/sdcard --metadata --with-hashes
+
+# Scope to specific systems (faster for targeted maintenance)
+retrosd tidy /path/to/sdcard --systems=GB,GBA --metadata
+
+# Enable artwork scraping (requires ScreenScraper credentials)
+retrosd tidy /path/to/sdcard --scrape --username=me --password=secret
+
+# Full maintenance: DB + metadata + scraping
+retrosd tidy /path/to/sdcard --metadata --scrape --username=me --password=secret
+
+# Include disc compression (convert eligible disc images to CHD; requires chdman)
+retrosd tidy /path/to/sdcard --compress --metadata
+
+# Delete originals after successful conversion (use with care)
+retrosd tidy /path/to/sdcard --compress --compress-delete-originals
+
+# NPM script version
+npm run tidy -- /path/to/sdcard --quiet
+
+# Strict mode: exit with error code if any stage fails
+retrosd tidy /path/to/sdcard --metadata --scrape --strict
+```
+
+**Options:**
+
+- `--systems <list>`: Comma-separated system keys to process
+- `--force`: Force full remote resync, ignoring timestamps
+- `--compress`: Convert eligible disc images to CHD (requires `chdman`)
+- `--compress-delete-originals`: Delete original disc files after successful conversion (requires `--compress`)
+- `--metadata`: Enable metadata generation stage
+- `--metadata-mode <mode>`: `missing` (default) or `refresh`
+- `--with-hashes`: Generate SHA-1/CRC32 hashes (slow, opt-in)
+- `--scrape`: Enable artwork scraping
+- `--scrape-mode <mode>`: `missing` (default) or `refresh`
+- `--scrape-media <list>`: `box,screenshot,video` (comma-separated)
+- `--username`, `--password`: ScreenScraper credentials
+- `--dev-id`, `--dev-password`: ScreenScraper developer credentials
+- `--strict`: Exit with error code if any stage fails
+- `-q, --quiet`: Minimal output
+- `--verbose`: Detailed per-system output
+
+**Default behavior:**
+
+- DB refresh: always runs first (same as `retrosd sync-db`)
+- Metadata: disabled by default (use `--metadata` to enable)
+- Scraping: disabled by default (use `--scrape` to enable)
+- Metadata mode: `missing` (skips existing sidecars without overwriting)
+- Scrape mode: `missing` (skips existing media files)
+- Error handling: best-effort (metadata/scrape failures don't block, unless `--strict`)
+
+---
+
+### 7. Format Conversion (CHD) ✅
 
 **What it does:**
 

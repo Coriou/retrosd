@@ -282,6 +282,7 @@ program
 	.option("--ink", "Use Ink React UI for progress display", false)
 	.action(async (target, options, command) => {
 		setupPromptHandlers()
+		const config = loadConfig()
 		const parentOptions = command.parent?.opts?.() ?? {}
 
 		if (!existsSync(target)) {
@@ -384,6 +385,7 @@ program
 	.option("--verbose", "More detailed output", false)
 	.action(async (target, options, command) => {
 		setupPromptHandlers()
+		const config = loadConfig()
 		const parentOptions = command.parent?.opts?.() ?? {}
 
 		if (!existsSync(target)) {
@@ -409,6 +411,158 @@ program
 			force: options.force,
 			quiet,
 			verbose,
+		})
+
+		if (!result.ok) {
+			await exitWithCode(1)
+		}
+	})
+
+// Add tidy command
+program
+	.command("tidy")
+	.description(
+		"Maintenance command: refresh database, optionally generate metadata and scrape artwork",
+	)
+	.argument("<target>", "Path to SD card root directory (database stored here)")
+	.option("--systems <list>", "Comma-separated system keys (default: all)")
+	.option("--force", "Force full remote resync, ignoring timestamps", false)
+	.option("-q, --quiet", "Minimal output", false)
+	.option("--verbose", "More detailed output", false)
+	.option(
+		"--compress",
+		"Compress eligible ROMs (disc images -> CHD; requires chdman)",
+		false,
+	)
+	.option(
+		"--compress-delete-originals",
+		"When used with --compress, delete original disc files after successful conversion",
+		false,
+	)
+	.option(
+		"--metadata",
+		"Enable metadata generation (default: missing only, no overwrite)",
+		false,
+	)
+	.option(
+		"--metadata-mode <mode>",
+		"Metadata mode: missing (default), refresh",
+		"missing",
+	)
+	.option(
+		"--with-hashes",
+		"Compute SHA-1/CRC32 when generating metadata (slow)",
+		false,
+	)
+	.option(
+		"--overwrite-metadata",
+		"Only valid when --metadata-mode refresh (otherwise ignored)",
+		false,
+	)
+	.option("--scrape", "Enable artwork scraping", false)
+	.option(
+		"--scrape-mode <mode>",
+		"Scrape mode: missing (default), refresh",
+		"missing",
+	)
+	.option(
+		"--scrape-media <list>",
+		"Media to scrape: box,screenshot,video (comma-separated)",
+		"box",
+	)
+	.option("--username <user>", "ScreenScraper username")
+	.option("--password <pass>", "ScreenScraper password")
+	.option("--dev-id <id>", "ScreenScraper developer ID")
+	.option("--dev-password <pass>", "ScreenScraper developer password")
+	.option(
+		"--strict",
+		"Exit with code 1 if any stage fails (default: best-effort)",
+		false,
+	)
+	.action(async (target, options, command) => {
+		setupPromptHandlers()
+		const config = loadConfig()
+		const parentOptions = command.parent?.opts?.() ?? {}
+
+		if (!existsSync(target)) {
+			ui.error(`Directory does not exist: ${target}`)
+			process.exit(1)
+		}
+
+		const dbPath = resolveDbPathForTarget(
+			target,
+			(parentOptions.dbPath as string | undefined) ?? undefined,
+		)
+		const systems = options.systems
+			? options.systems.split(",").map((s: string) => s.trim())
+			: undefined
+		const quiet = Boolean(options.quiet || parentOptions.quiet)
+		const verbose = Boolean(options.verbose || parentOptions.verbose)
+		const strict = Boolean(options.strict)
+		const compressEnabled = Boolean(options.compress)
+		const compressDeleteOriginals = Boolean(options.compressDeleteOriginals)
+		if (!quiet && compressDeleteOriginals && !compressEnabled) {
+			ui.warn("--compress-delete-originals requires --compress; ignoring")
+		}
+
+		// Parse metadata options
+		const metadataEnabled = Boolean(options.metadata)
+		const metadataMode: "missing" | "refresh" =
+			options.metadataMode === "refresh" ? "refresh" : "missing"
+		const withHashes = Boolean(options.withHashes)
+		const overwriteMetadata = Boolean(options.overwriteMetadata)
+		if (
+			!quiet &&
+			overwriteMetadata &&
+			(!metadataEnabled || metadataMode !== "refresh")
+		) {
+			ui.warn(
+				"--overwrite-metadata is only valid with --metadata --metadata-mode refresh; ignoring",
+			)
+		}
+
+		// Parse scrape options
+		const scrapeEnabled = Boolean(options.scrape)
+		const scrapeMode: "missing" | "refresh" =
+			options.scrapeMode === "refresh" ? "refresh" : "missing"
+		const scrapeMedia = options.scrapeMedia
+			? options.scrapeMedia.split(",").map((s: string) => s.trim())
+			: ["box"]
+
+		const creds = resolveScreenScraperCredentials(
+			config,
+			options as Record<string, unknown>,
+			parentOptions as Record<string, unknown>,
+		)
+
+		const { runTidy } = await import("../core/tidy.js")
+		const result = await runTidy({
+			targetDir: target,
+			dbPath,
+			...(systems && systems.length > 0 ? { systems } : {}),
+			...(typeof options.force === "boolean" ? { force: options.force } : {}),
+			...(compressEnabled ? { compress: true } : {}),
+			...(compressEnabled && compressDeleteOriginals
+				? { compressDeleteOriginals: true }
+				: {}),
+			...(metadataEnabled ? { metadata: true } : {}),
+			...(metadataEnabled ? { metadataMode } : {}),
+			...(metadataEnabled && metadataMode === "refresh" && overwriteMetadata
+				? { overwriteMetadata: true }
+				: {}),
+			...(withHashes ? { withHashes: true } : {}),
+			...(scrapeEnabled ? { scrape: true } : {}),
+			...(scrapeEnabled ? { scrapeMode } : {}),
+			...(scrapeEnabled ? { scrapeMedia } : {}),
+			...(creds.hasUserCreds
+				? { username: creds.username, password: creds.password }
+				: {}),
+			...(creds.hasDevCreds
+				? { devId: creds.devId, devPassword: creds.devPassword }
+				: {}),
+			quiet,
+			verbose,
+			...(strict ? { strict: true } : {}),
 		})
 
 		if (!result.ok) {
@@ -981,31 +1135,17 @@ program
 			? systemsArg.split(",").map((s: string) => s.trim())
 			: (config.defaultSystems ?? ["GB", "GBA", "GBC", "FC", "MD", "PS"])
 
-		const scrapeUsername = (options.username ?? parentOptions.username) as
-			| string
-			| undefined
-		const scrapePassword = (options.password ?? parentOptions.password) as
-			| string
-			| undefined
-		const resolvedUsername = (scrapeUsername ?? config.scrapeUsername)?.trim()
-		const resolvedPassword = (scrapePassword ?? config.scrapePassword)?.trim()
-		const hasUserCreds = Boolean(resolvedUsername && resolvedPassword)
-
-		const devId = String(
-			(options.devId ||
-				parentOptions.devId ||
-				config.scrapeDevId ||
-				process.env["SCREENSCRAPER_DEV_ID"] ||
-				"") as string,
-		).trim()
-		const devPassword = String(
-			(options.devPassword ||
-				parentOptions.devPassword ||
-				config.scrapeDevPassword ||
-				process.env["SCREENSCRAPER_DEV_PASSWORD"] ||
-				"") as string,
-		).trim()
-		const hasDevCreds = Boolean(devId && devPassword)
+		const creds = resolveScreenScraperCredentials(
+			config,
+			options as Record<string, unknown>,
+			parentOptions as Record<string, unknown>,
+		)
+		const hasUserCreds = creds.hasUserCreds
+		const resolvedUsername = creds.username
+		const resolvedPassword = creds.password
+		const hasDevCreds = creds.hasDevCreds
+		const devId = creds.devId
+		const devPassword = creds.devPassword
 
 		const isInteractiveTty = Boolean(process.stdout.isTTY)
 		const useInk = Boolean(options.ink || (isInteractiveTty && !options.quiet))
@@ -1025,7 +1165,7 @@ program
 			...(hasUserCreds
 				? { username: resolvedUsername!, password: resolvedPassword! }
 				: {}),
-			...(hasDevCreds ? { devId, devPassword } : {}),
+			...(hasDevCreds ? { devId: devId!, devPassword: devPassword! } : {}),
 			verbose: options.verbose,
 			overwrite: options.overwrite,
 			includeUnknown: options.includeUnknown,
@@ -1233,6 +1373,53 @@ interface CliArgs {
 	devId?: string
 	devPassword?: string
 	scrapeMedia?: string
+}
+
+function resolveScreenScraperCredentials(
+	config: ReturnType<typeof loadConfig>,
+	options: Record<string, unknown>,
+	parentOptions: Record<string, unknown>,
+): {
+	hasUserCreds: boolean
+	username?: string
+	password?: string
+	hasDevCreds: boolean
+	devId?: string
+	devPassword?: string
+} {
+	const optionUsername = (options["username"] ?? parentOptions["username"]) as
+		| string
+		| undefined
+	const optionPassword = (options["password"] ?? parentOptions["password"]) as
+		| string
+		| undefined
+
+	const username = (optionUsername ?? config.scrapeUsername)?.trim()
+	const password = (optionPassword ?? config.scrapePassword)?.trim()
+	const hasUserCreds = Boolean(username && password)
+
+	const devId = String(
+		(options["devId"] ??
+			parentOptions["devId"] ??
+			config.scrapeDevId ??
+			process.env["SCREENSCRAPER_DEV_ID"] ??
+			"") as string,
+	).trim()
+	const devPassword = String(
+		(options["devPassword"] ??
+			parentOptions["devPassword"] ??
+			config.scrapeDevPassword ??
+			process.env["SCREENSCRAPER_DEV_PASSWORD"] ??
+			"") as string,
+	).trim()
+	const hasDevCreds = Boolean(devId && devPassword)
+
+	return {
+		hasUserCreds,
+		...(hasUserCreds ? { username: username!, password: password! } : {}),
+		hasDevCreds,
+		...(hasDevCreds ? { devId, devPassword } : {}),
+	}
 }
 
 async function run(
