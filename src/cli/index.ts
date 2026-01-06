@@ -436,11 +436,24 @@ program
 
 			if (result?.nextAction?.type === "download") {
 				const { system, source, filename } = result.nextAction
-				const selectedEntries = getEntriesByKeys([system]).filter(
-					e => e.source === source,
-				)
+
+				const allEntries = getEntriesByKeys([system])
+				const selectedEntries = allEntries.filter(e => e.source === source)
+
 				if (selectedEntries.length === 0) {
-					ui.error(`No downloader entry found for ${system} (${source})`)
+					console.error(
+						`\n❌ No downloader entry found for ${system} (${source})`,
+					)
+					if (allEntries.length > 0) {
+						console.error(
+							`   Found ${allEntries.length} entry(ies) for ${system} but with different source.`,
+						)
+						console.error(
+							`   Available: ${allEntries.map(e => e.source).join(", ")}`,
+						)
+					} else {
+						console.error(`   System ${system} is not configured for download.`)
+					}
 					await exitWithCode(1)
 					return
 				}
@@ -463,7 +476,8 @@ program
 					includeUnlicensed: false,
 					includeHacks: false,
 					includeHomebrew: false,
-					includeList: new Set([filename]),
+					// applyFilters() normalizes filenames to lowercase for includeList matching
+					includeList: new Set([filename.trim().toLowerCase()]),
 					diskProfile: "balanced" as const,
 					enable1G1R: false,
 				}
@@ -471,6 +485,7 @@ program
 				const rendered = renderDownload(inkOptions)
 				await rendered.waitUntilExit()
 				const downloadResult = rendered.result
+
 				if (downloadResult?.failed) await exitWithCode(1)
 			}
 			return
@@ -1245,7 +1260,7 @@ async function run(
 	const resume = options.resume
 	const quiet = options.quiet
 	const verbose = options.verbose
-	const biosOnly = options.biosOnly
+	const _biosOnly = options.biosOnly
 	const romsOnly = options.romsOnly
 	const nonInteractive = options.nonInteractive || !process.stdin.isTTY
 	const includePrerelease =
@@ -1439,7 +1454,7 @@ async function run(
 	// ROM Downloads
 	// ─────────────────────────────────────────────────────────────────────────────
 
-	if (!biosOnly) {
+	if (!_biosOnly) {
 		// Load saved preferences for interactive prompts
 		const savedPrefs = loadPreferences(target)
 

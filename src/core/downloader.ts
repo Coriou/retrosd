@@ -19,8 +19,7 @@ import { fetch as undiciFetch } from "undici"
 
 import { BackpressureController } from "../backpressure.js"
 import { downloadFile, anyExtensionExists, HTTP_AGENT } from "../download.js"
-import { isZipArchive, extractZip } from "../extract.js"
-import { extract7z, is7zArchive } from "../extract.js"
+import { extract7z, extractZip, is7zArchive, isZipArchive } from "../extract.js"
 import {
 	applyFilters,
 	apply1G1R,
@@ -533,11 +532,22 @@ async function* downloadRomEntry(
 						setManifestEntry(manifest, entry.destDir, filename, meta)
 					}
 
-					// When extraction is enabled for this entry and this file is a ZIP,
-					// defer the "complete" event until after extraction so consumers
-					// (UI + SQLite tracking) see the final on-disk localPath.
-					if (entry.extract && isZipArchive(filename)) {
+					// If we will extract this archive, emit a "downloaded" event now so
+					// progress counters advance immediately, but defer the final "complete"
+					// event (used for DB/localPath tracking) until after extraction.
+					if (
+						entry.extract &&
+						(isZipArchive(filename) || is7zArchive(filename))
+					) {
 						pendingExtraction.add(filename)
+						pushEvent({
+							type: "downloaded",
+							id: downloadId,
+							filename,
+							system: entry.key,
+							bytesDownloaded: result.bytesDownloaded,
+							localPath: destPath,
+						})
 					} else {
 						pushEvent({
 							type: "complete",
@@ -594,9 +604,10 @@ async function* downloadRomEntry(
 				const archivePath = join(destDir, filename)
 				const downloadId = `${entry.key}-${filename}`
 
-				if (!existsSync(archivePath) || !isZipArchive(filename)) {
-					return
-				}
+				if (!existsSync(archivePath)) return
+				const isZip = isZipArchive(filename)
+				const is7z = is7zArchive(filename)
+				if (!isZip && !is7z) return
 
 				pushEvent({
 					type: "extract",
@@ -606,11 +617,15 @@ async function* downloadRomEntry(
 					status: "start",
 				})
 
-				const result = await extractZip(archivePath, destDir, {
-					extractGlob: entry.extractGlob,
-					deleteArchive: true,
-					flatten: true,
-				})
+				const result = isZip
+					? await extractZip(archivePath, destDir, {
+							extractGlob: entry.extractGlob,
+							deleteArchive: true,
+							flatten: true,
+						})
+					: await extract7z(archivePath, destDir, {
+							deleteArchive: true,
+						})
 
 				const downloadedBytes = downloadedBytesByFilename.get(filename) ?? 0
 				const completeId = `${entry.key}-${filename}`
@@ -625,20 +640,30 @@ async function* downloadRomEntry(
 						status: "complete",
 					})
 
-					// If we deferred completion for this ZIP, emit it now using the
+					// If we deferred completion for this archive, emit it now using the
 					// extracted file path (best-effort: first extracted file).
 					if (pendingExtraction.has(filename)) {
 						pendingExtraction.delete(filename)
 						const extractedName = result.extractedFiles[0]
 						const finalLocalPath = extractedName
 							? join(destDir, extractedName)
-							: archivePath
+							: destDir
+
+						let finalSize = downloadedBytes
+						if (extractedName) {
+							try {
+								finalSize = statSync(finalLocalPath).size
+							} catch {
+								// Best-effort; fall back to downloaded bytes
+							}
+						}
+
 						pushEvent({
 							type: "complete",
 							id: completeId,
 							filename,
 							system: entry.key,
-							bytesDownloaded: downloadedBytes,
+							bytesDownloaded: finalSize,
 							extracted: Boolean(extractedName),
 							localPath: finalLocalPath,
 						})
@@ -658,12 +683,18 @@ async function* downloadRomEntry(
 					// The archive is preserved on extraction failure.
 					if (pendingExtraction.has(filename)) {
 						pendingExtraction.delete(filename)
+						let archiveSize = downloadedBytes
+						try {
+							archiveSize = statSync(archivePath).size
+						} catch {
+							// Best-effort
+						}
 						pushEvent({
 							type: "complete",
 							id: completeId,
 							filename,
 							system: entry.key,
-							bytesDownloaded: downloadedBytes,
+							bytesDownloaded: archiveSize,
 							localPath: archivePath,
 						})
 					}

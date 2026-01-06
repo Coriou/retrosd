@@ -53,7 +53,7 @@ You get just: `Super Mario Bros. (Europe).nes` (the highest priority version)
 
 - Creates `.json` sidecar files for every ROM
 - Parses filename to extract: title, region, version, tags
-- Generates SHA-1 and CRC32 hashes (compatible with No-Intro/Redump DATs)
+- Can generate SHA-1 and CRC32 hashes (compatible with No-Intro/Redump DATs)
 - Tracks file size and timestamps
 
 **Why it matters:**
@@ -62,6 +62,12 @@ You get just: `Super Mario Bros. (Europe).nes` (the highest priority version)
 - Enables integration with RomM, Playnite, EmulationStation
 - Provides data for scrapers to work more accurately
 - Allows verification of ROM integrity over time
+
+**Notes:**
+
+- Hashes are computed when you opt in:
+  - During download with `--verify-hashes`
+  - During scanning with `retrosd scan --hashes`
 
 **Metadata file example:**
 
@@ -105,6 +111,8 @@ retrosd scan /path/to/sdcard
 # With hashing for verification:
 retrosd scan --hashes -o collection.json /path/to/sdcard
 ```
+
+When hashes are available, the scan summary also reports how many **byte-identical duplicates** it found (grouped by SHA-1 when present, otherwise CRC32).
 
 #### `retrosd verify`
 
@@ -154,6 +162,9 @@ retrosd search /path/to/sdcard -i
 # Filter by system/region and show only downloaded ROMs
 retrosd search /path/to/sdcard zelda --systems=GB,GBA --regions=USA,Europe --local
 
+# Collapse identical local results by hash (requires `retrosd scan --hashes`)
+retrosd search /path/to/sdcard 102 --systems=GBC --collapse-hash
+
 # Custom DB location (absolute path or relative to the target)
 retrosd sync /path/to/sdcard --db-path .retrosd/catalog.db
 retrosd search /path/to/sdcard pokemon --db-path .retrosd/catalog.db
@@ -184,7 +195,12 @@ retrosd search /path/to/sdcard pokemon --db-path .retrosd/catalog.db
 
 ```bash
 # Convert during download
+# (Default: if chdman is installed and you download disc systems, RetroSD will offer/enable CHD conversion)
+retrosd --systems=PS /path/to/sdcard
+
+# Force enable/disable
 retrosd --convert-chd --systems=PS /path/to/sdcard
+retrosd --no-convert-chd --systems=PS /path/to/sdcard
 
 # Convert existing collection
 retrosd convert /path/to/sdcard --delete-originals
@@ -194,6 +210,12 @@ retrosd convert /path/to/sdcard --delete-originals
 
 - macOS: `brew install mame`
 - Linux: `apt-get install mame-tools`
+
+**Redump archives:**
+
+- Many disc catalogs ship as `.7z`. To extract those automatically:
+  - macOS: `brew install p7zip`
+  - Linux: `apt-get install p7zip-full`
 
 ---
 
@@ -590,8 +612,9 @@ retrosd export /path/to/sdcard -o ~/my-collection.json
 **UI Selection (Ink vs plain output):**
 
 - Ink UI is used automatically when running in an interactive TTY (and `--quiet` is not set)
-- Force Ink UI on with `--ink` (available on the main command and supported subcommands)
-- For scripting / CI, use `--quiet` or pipe output to disable Ink
+- You can force Ink UI with `--ink` on commands that support it
+- The `search` command also supports `-i/--interactive`
+- For scripting / CI, use `--quiet` to disable Ink and reduce output
 
 **Logs (Ink mode):**
 
@@ -622,20 +645,6 @@ retrosd export /path/to/sdcard -o ~/my-collection.json
 - Modular architecture
 - Easy to extend with new formats/systems
 - Well-documented types
-
----
-
-## 🔮 Future Possibilities
-
-Natural next steps could include:
-
-1. **DAT Import** - Directly use No-Intro/Redump DAT files for validation
-2. **Auto-Update DATs** - Keep DAT files current automatically
-3. **Duplicate Detection** - Find and merge ROMs with different naming
-4. **RVZ Support** - GameCube/Wii compression format
-5. **Playlist Generation** - Auto-create RetroArch playlists
-6. **Additional Scrapers** - Support for other artwork sources (TheGamesDB, etc.)
-7. **Web Interface** - Optional GUI for easier management
 
 ---
 

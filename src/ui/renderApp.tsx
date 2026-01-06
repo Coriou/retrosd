@@ -206,8 +206,9 @@ export function renderApp(
 export async function runDownloadView(
 	options: DownloaderOptions,
 ): Promise<number> {
-	const { result, waitUntilExit } = renderDownload(options)
-	await waitUntilExit()
+	const rendered = renderDownload(options)
+	await rendered.waitUntilExit()
+	const result = rendered.result
 	return result?.failed ? 1 : 0
 }
 
@@ -215,8 +216,9 @@ export async function runDownloadView(
  * Run the scrape view and wait for completion
  */
 export async function runScrapeView(options: ScraperOptions): Promise<number> {
-	const { result, waitUntilExit } = renderScrape(options)
-	await waitUntilExit()
+	const rendered = renderScrape(options)
+	await rendered.waitUntilExit()
+	const result = rendered.result
 	return result?.failed ? 1 : 0
 }
 
@@ -224,8 +226,9 @@ export async function runScrapeView(options: ScraperOptions): Promise<number> {
  * Run the scan view and wait for completion
  */
 export async function runScanView(options: ScanOptions): Promise<number> {
-	const { result, waitUntilExit } = renderScan(options)
-	await waitUntilExit()
+	const rendered = renderScan(options)
+	await rendered.waitUntilExit()
+	const result = rendered.result
 	return result?.failed ? 1 : 0
 }
 
@@ -233,8 +236,9 @@ export async function runScanView(options: ScanOptions): Promise<number> {
  * Run the verify view and wait for completion
  */
 export async function runVerifyView(options: VerifyOptions): Promise<number> {
-	const { result, waitUntilExit } = renderVerify(options)
-	await waitUntilExit()
+	const rendered = renderVerify(options)
+	await rendered.waitUntilExit()
+	const result = rendered.result
 	return result?.failed ? 1 : 0
 }
 
@@ -242,8 +246,9 @@ export async function runVerifyView(options: VerifyOptions): Promise<number> {
  * Run the convert view and wait for completion
  */
 export async function runConvertView(options: ConvertOptions): Promise<number> {
-	const { result, waitUntilExit } = renderConvert(options)
-	await waitUntilExit()
+	const rendered = renderConvert(options)
+	await rendered.waitUntilExit()
+	const result = rendered.result
 	return result?.failed ? 1 : 0
 }
 
@@ -276,8 +281,9 @@ export function renderSync(options: SyncOptions): RenderResult {
  * Run the sync view and wait for completion
  */
 export async function runSyncView(options: SyncOptions): Promise<number> {
-	const { result, waitUntilExit } = renderSync(options)
-	await waitUntilExit()
+	const rendered = renderSync(options)
+	await rendered.waitUntilExit()
+	const result = rendered.result
 	return result?.failed ? 1 : 0
 }
 
@@ -312,7 +318,7 @@ export function renderSearch(options: SearchViewOptions): RenderResult {
 export async function runSearchView(
 	options: SearchViewOptions,
 ): Promise<AppResult | null> {
-	const { result, waitUntilExit } = renderSearch(options)
-	await waitUntilExit()
-	return result ?? null
+	const rendered = renderSearch(options)
+	await rendered.waitUntilExit()
+	return rendered.result ?? null
 }

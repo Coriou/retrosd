@@ -296,6 +296,21 @@ export async function promptMetadataOptions(): Promise<boolean> {
 }
 
 /**
+ * Prompt user for CHD conversion of eligible disc images.
+ */
+export async function promptChdConversion(initial: boolean): Promise<boolean> {
+	const response = await prompts({
+		type: "confirm",
+		name: "convert",
+		message:
+			"Compress eligible disc ROMs to CHD after download? (Saves space; deletes original .cue/.bin after successful conversion)",
+		initial,
+	})
+
+	return response.convert === true
+}
+
+/**
  * Handle Ctrl+C gracefully
  */
 export function setupPromptHandlers(): void {

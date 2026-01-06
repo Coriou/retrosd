@@ -20,6 +20,17 @@ async function hasCommand(command: string): Promise<boolean> {
 	})
 }
 
+export function chdmanInstallHint(): string {
+	return "chdman not found. Install MAME tools: brew install mame (macOS) or apt-get install mame-tools (Linux)"
+}
+
+export async function checkChdman(): Promise<
+	{ ok: true } | { ok: false; error: string }
+> {
+	if (await hasCommand("chdman")) return { ok: true }
+	return { ok: false, error: chdmanInstallHint() }
+}
+
 /**
  * Convert BIN/CUE to CHD format
  * Requires chdman from MAME tools
@@ -29,13 +40,8 @@ export async function convertToChd(
 	outputPath: string,
 	options: { verbose?: boolean; quiet?: boolean } = {},
 ): Promise<{ success: boolean; error?: string }> {
-	if (!(await hasCommand("chdman"))) {
-		return {
-			success: false,
-			error:
-				"chdman not found. Install MAME tools: brew install mame (macOS) or apt-get install mame-tools (Linux)",
-		}
-	}
+	const chdman = await checkChdman()
+	if (!chdman.ok) return { success: false, error: chdman.error }
 
 	if (!existsSync(cuePath)) {
 		return { success: false, error: `File not found: ${cuePath}` }
@@ -133,6 +139,17 @@ export async function convertRomsInDirectory(
 	}
 
 	const files = readdirSync(directory)
+	const cueFiles = files.filter(f => f.toLowerCase().endsWith(".cue"))
+	const cuesToConvert = cueFiles.filter(
+		f => !existsSync(join(directory, f.replace(/\.cue$/i, ".chd"))),
+	)
+	if (cuesToConvert.length > 0) {
+		const chdman = await checkChdman()
+		if (!chdman.ok) {
+			if (!options.quiet) ui.error(chdman.error)
+			return { converted: 0, failed: cuesToConvert.length, skipped: 0 }
+		}
+	}
 
 	for (const filename of files) {
 		const filePath = join(directory, filename)
@@ -159,8 +176,19 @@ export async function convertRomsInDirectory(
 
 				if (options.deleteOriginals) {
 					try {
+						const deleteSidecar = (originalFilename: string) => {
+							const sidecarPath = join(
+								directory,
+								originalFilename.replace(/\.[^.]+$/, "") + ".json",
+							)
+							if (existsSync(sidecarPath)) {
+								unlinkSync(sidecarPath)
+							}
+						}
+
 						// Delete .cue file
 						unlinkSync(filePath)
+						deleteSidecar(filename)
 
 						// Delete associated .bin files
 						const binBaseName = filename.replace(/\.cue$/i, "")
@@ -172,6 +200,7 @@ export async function convertRomsInDirectory(
 							const binPath = join(directory, binFile)
 							if (existsSync(binPath)) {
 								unlinkSync(binPath)
+								deleteSidecar(binFile)
 							}
 						}
 					} catch (err) {

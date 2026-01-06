@@ -100,12 +100,16 @@ export function App({
 	const { exit } = useApp()
 	const logFilePath = getLogFilePath()
 
-	// Global keybindings
-	useInput((input, key) => {
-		if (input === "q" || key.escape) {
-			exit()
-		}
-	})
+	// Global keybindings - skip for views that need full keyboard control
+	const enableGlobalKeys = command !== "search"
+	useInput(
+		(input, key) => {
+			if (input === "q" || key.escape) {
+				exit()
+			}
+		},
+		{ isActive: enableGlobalKeys },
+	)
 
 	const renderView = () => {
 		switch (command) {

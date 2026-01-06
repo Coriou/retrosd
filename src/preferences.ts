@@ -26,6 +26,7 @@ export interface UserPreferences {
 	confirmRomDownload?: boolean
 	scrape?: boolean
 	scrapeMedia?: string[]
+	convertChd?: boolean
 	updatedAt?: string
 }
 
@@ -109,6 +110,9 @@ export function updatePreferences(
 
 	const scrapeMedia = getValue("scrapeMedia")
 	if (scrapeMedia !== undefined) merged.scrapeMedia = scrapeMedia
+
+	const convertChd = getValue("convertChd")
+	if (convertChd !== undefined) merged.convertChd = convertChd
 
 	const sources = getValue("sources")
 	if (sources !== undefined) merged.sources = sources

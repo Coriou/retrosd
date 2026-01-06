@@ -212,7 +212,9 @@ export async function extract7z(
 	destDir: string,
 	options: Pick<ExtractOptions, "deleteArchive">,
 ): Promise<ExtractResult> {
-	if (!(await hasCommand("7z")) && !(await hasCommand("7zz"))) {
+	const has7z = await hasCommand("7z")
+	const has7zz = !has7z ? await hasCommand("7zz") : false
+	if (!has7z && !has7zz) {
 		return {
 			success: false,
 			extractedFiles: [],
@@ -223,7 +225,7 @@ export async function extract7z(
 
 	mkdirSync(destDir, { recursive: true })
 
-	const tool = (await hasCommand("7z")) ? "7z" : "7zz"
+	const tool = has7z ? "7z" : "7zz"
 
 	const result = await new Promise<{ success: boolean; error?: string }>(
 		resolve => {

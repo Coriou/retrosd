@@ -82,6 +82,10 @@ export interface SearchResult {
 	isLocal: boolean
 	/** Local path if downloaded */
 	localPath: string | null
+	/** Local SHA-1 when available (typically after scan --hashes) */
+	localSha1: string | null
+	/** Local CRC32 when available (typically after scan --hashes) */
+	localCrc32: string | null
 }
 
 /**
@@ -137,6 +141,30 @@ export function searchRoms(
 
 	const localPathExpr = sql<string | null>`(
 		SELECT lr.local_path FROM local_roms lr
+		WHERE lr.remote_rom_id = ${remoteRoms.id}
+			OR (
+				lr.system IS NOT NULL AND lr.filename IS NOT NULL
+				AND lr.system = ${remoteRoms.system}
+				AND lr.filename = ${remoteRoms.filename}
+			)
+		ORDER BY lr.downloaded_at DESC, lr.id DESC
+		LIMIT 1
+	)`
+
+	const localSha1Expr = sql<string | null>`(
+		SELECT lr.sha1 FROM local_roms lr
+		WHERE lr.remote_rom_id = ${remoteRoms.id}
+			OR (
+				lr.system IS NOT NULL AND lr.filename IS NOT NULL
+				AND lr.system = ${remoteRoms.system}
+				AND lr.filename = ${remoteRoms.filename}
+			)
+		ORDER BY lr.downloaded_at DESC, lr.id DESC
+		LIMIT 1
+	)`
+
+	const localCrc32Expr = sql<string | null>`(
+		SELECT lr.crc32 FROM local_roms lr
 		WHERE lr.remote_rom_id = ${remoteRoms.id}
 			OR (
 				lr.system IS NOT NULL AND lr.filename IS NOT NULL
@@ -216,6 +244,8 @@ export function searchRoms(
 			isHack: romMetadata.isHack,
 			isLocal: localExists,
 			localPath: localPathExpr,
+			localSha1: localSha1Expr,
+			localCrc32: localCrc32Expr,
 		})
 		.from(remoteRoms)
 		.innerJoin(romMetadata, eq(romMetadata.remoteRomId, remoteRoms.id))
@@ -256,7 +286,42 @@ export function searchRoms(
 		isHack: row.isHack ?? false,
 		isLocal: (row.isLocal ?? 0) === 1,
 		localPath: row.localPath,
+		localSha1: row.localSha1 ?? null,
+		localCrc32: row.localCrc32 ?? null,
 	}))
+}
+
+/**
+ * Collapse local search results that refer to byte-identical ROMs.
+ *
+ * This only collapses results when a local hash is present, and it only
+ * dedupes within the same system to avoid cross-system surprises.
+ */
+export function collapseSearchResultsByHash(
+	results: SearchResult[],
+): SearchResult[] {
+	const seen = new Set<string>()
+	const out: SearchResult[] = []
+
+	for (const result of results) {
+		if (!result.isLocal) {
+			out.push(result)
+			continue
+		}
+
+		const hash = result.localSha1 ?? result.localCrc32
+		if (!hash) {
+			out.push(result)
+			continue
+		}
+
+		const key = `${result.system}|${hash}`
+		if (seen.has(key)) continue
+		seen.add(key)
+		out.push(result)
+	}
+
+	return out
 }
 
 /**

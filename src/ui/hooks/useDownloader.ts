@@ -43,6 +43,7 @@ export function useDownloader(
 	dbPath?: string,
 ) {
 	const trackDownload = useLocalRomsTracker(dbPath ?? null)
+	const countedRef = useRef<Set<string>>(new Set())
 
 	const [state, setState] = useState<DownloadViewState>(() => ({
 		systems: new Map(),
@@ -145,18 +146,43 @@ export function useDownloader(
 						break
 					}
 
+					case "downloaded": {
+						// Count completion immediately for progress, but keep DB tracking
+						// deferred until the later "complete" event (post-extraction).
+						if (!countedRef.current.has(event.id)) {
+							countedRef.current.add(event.id)
+							const sys = systems.get(event.system)
+							if (sys) {
+								sys.completed++
+								sys.bytesDownloaded += event.bytesDownloaded
+							}
+							overall.completedFiles++
+							overall.bytesDownloaded += event.bytesDownloaded
+						}
+
+						// Remove from active downloads so it doesn't appear stuck at 100%.
+						activeDownloads.delete(event.id)
+						break
+					}
+
 					case "complete": {
 						// Track in SQLite if database enabled
 						if (trackDownload) trackDownload(event)
 
-						activeDownloads.delete(event.id)
-						const sys = systems.get(event.system)
-						if (sys) {
-							sys.completed++
-							sys.bytesDownloaded += event.bytesDownloaded
+						// Only count this completion if we didn't already count it via
+						// the earlier "downloaded" event.
+						if (!countedRef.current.has(event.id)) {
+							countedRef.current.add(event.id)
+							const sys = systems.get(event.system)
+							if (sys) {
+								sys.completed++
+								sys.bytesDownloaded += event.bytesDownloaded
+							}
+							overall.completedFiles++
+							overall.bytesDownloaded += event.bytesDownloaded
 						}
-						overall.completedFiles++
-						overall.bytesDownloaded += event.bytesDownloaded
+
+						activeDownloads.delete(event.id)
 						break
 					}
 
@@ -184,12 +210,31 @@ export function useDownloader(
 					}
 
 					case "extract": {
-						const download = activeDownloads.get(event.id)
-						if (download && event.status === "start") {
-							download.status = "extracting"
-							activeDownloads.set(event.id, { ...download })
-						} else if (download && event.status === "complete") {
+						const existing = activeDownloads.get(event.id)
+						if (event.status === "start") {
+							const next: DownloadItemState = existing
+								? { ...existing, status: "extracting", speed: 0, percent: 100 }
+								: {
+										id: event.id,
+										filename: event.filename,
+										system: event.system,
+										status: "extracting",
+										current: 0,
+										total: 0,
+										speed: 0,
+										percent: 100,
+									}
+							activeDownloads.set(event.id, next)
+						} else if (event.status === "complete") {
 							activeDownloads.delete(event.id)
+						} else if (event.status === "error") {
+							if (existing) {
+								existing.status = "error"
+								if (event.error !== undefined) {
+									existing.error = event.error
+								}
+								activeDownloads.set(event.id, { ...existing })
+							}
 						}
 						break
 					}

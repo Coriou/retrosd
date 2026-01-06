@@ -1008,6 +1008,7 @@ export async function downloadRomEntry(
 		let extractedCount = 0
 		let extractFailed = 0
 		let recoveredCount = 0
+		let warned7zMissing = false
 		const extractConcurrency = Math.min(8, Math.max(2, options.jobs ?? 4))
 		const limitExtract = pLimit(extractConcurrency)
 
@@ -1043,6 +1044,14 @@ export async function downloadRomEntry(
 						`Extract failed for ${filename}: ${result.error ?? "unknown"}`,
 						options.verbose,
 					)
+					if (
+						!warned7zMissing &&
+						!options.quiet &&
+						(result.error ?? "").includes("7z not found")
+					) {
+						warned7zMissing = true
+						ui.error(result.error ?? "7z not found")
+					}
 					return false
 				}
 

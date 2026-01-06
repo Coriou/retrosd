@@ -18,6 +18,7 @@ import type { DiskProfile, RegionPreset, RomEntry, Source } from "../types.js"
 export type DownloadEvent =
 	| DownloadStartEvent
 	| DownloadProgressEvent
+	| DownloadDownloadedEvent
 	| DownloadCompleteEvent
 	| DownloadErrorEvent
 	| DownloadListingEvent
@@ -73,6 +74,17 @@ export interface DownloadProgressEvent {
 	total: number
 	speed: number // bytes per second
 	percent: number
+}
+
+/** Emitted when the file has finished downloading to disk (may be extracted later) */
+export interface DownloadDownloadedEvent {
+	type: "downloaded"
+	id: string
+	filename: string
+	system: string
+	bytesDownloaded: number
+	/** Full path to the downloaded file (usually the archive path) */
+	localPath: string
 }
 
 /** Emitted when a download completes successfully */

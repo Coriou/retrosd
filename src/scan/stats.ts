@@ -28,6 +28,10 @@ export interface ScanStats {
 		/** Top titles by variant count */
 		topTitles: Array<{ title: string; variants: number }>
 	}
+	hashDuplicates: {
+		sha1: { groups: number; extraCopies: number }
+		crc32: { groups: number; extraCopies: number }
+	}
 }
 
 function sortCountsDesc<T extends { count: number }>(
@@ -86,6 +90,9 @@ export function computeScanStats(
 		{ displayTitle: string; variants: number }
 	>()
 
+	const sha1Counts = new Map<string, number>()
+	const crc32Counts = new Map<string, number>()
+
 	for (const system of manifest.systems) {
 		const systemRegions = new Map<string, number>()
 		for (const rom of system.roms) {
@@ -95,6 +102,9 @@ export function computeScanStats(
 			if (rom.hasMetadata) withMetadata += 1
 			if (rom.sha1) hasSha1 += 1
 			if (rom.crc32) hasCrc32 += 1
+
+			if (rom.sha1) bump(sha1Counts, rom.sha1)
+			if (rom.crc32) bump(crc32Counts, rom.crc32)
 
 			countRegions(rom, overallRegionCounts)
 			countRegions(rom, systemRegions)
@@ -146,6 +156,18 @@ export function computeScanStats(
 		.slice(0, Math.min(10, topN))
 		.map(t => ({ title: t.displayTitle, variants: t.variants }))
 
+	const summarizeHashCounts = (counts: Map<string, number>) => {
+		let groups = 0
+		let extraCopies = 0
+		for (const count of counts.values()) {
+			if (count > 1) {
+				groups += 1
+				extraCopies += count - 1
+			}
+		}
+		return { groups, extraCopies }
+	}
+
 	return {
 		totals: {
 			roms,
@@ -170,6 +192,10 @@ export function computeScanStats(
 		duplicates: {
 			titlesWithVariants,
 			topTitles,
+		},
+		hashDuplicates: {
+			sha1: summarizeHashCounts(sha1Counts),
+			crc32: summarizeHashCounts(crc32Counts),
 		},
 	}
 }

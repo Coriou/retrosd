@@ -75,7 +75,23 @@ export function ConvertView({ options, onComplete }: ConvertViewProps) {
 			try {
 				const { existsSync } = await import("node:fs")
 				const { join } = await import("node:path")
-				const { convertRomsInDirectory } = await import("../../convert.js")
+				const { convertRomsInDirectory, checkChdman } =
+					await import("../../convert.js")
+
+				const chdman = await checkChdman()
+				if (!chdman.ok) {
+					setError(chdman.error)
+					setIsRunning(false)
+					onComplete?.({
+						success: false,
+						completed: 0,
+						failed: 1,
+						skipped: 0,
+						durationMs: Date.now() - startTimeRef.current,
+					})
+					setTimeout(() => exit(), 1000)
+					return
+				}
 
 				const systemResults: SystemResult[] = []
 

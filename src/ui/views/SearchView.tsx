@@ -14,7 +14,10 @@ import { Spinner } from "../components/Spinner.js"
 import { Success, Error as ErrorMsg, Warning } from "../components/Message.js"
 import { colors, symbols } from "../theme.js"
 import type { AppResult } from "../App.js"
-import type { SearchResult } from "../../db/queries/search.js"
+import {
+	collapseSearchResultsByHash,
+	type SearchResult,
+} from "../../db/queries/search.js"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -35,6 +38,8 @@ export interface SearchOptions {
 	localOnly?: boolean
 	/** Exclude pre-release ROMs */
 	excludePrerelease?: boolean
+	/** Collapse identical local ROMs by hash (requires scan --hashes) */
+	collapseHash?: boolean
 	/** Results per page */
 	limit?: number
 }
@@ -304,15 +309,21 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 	// Selection state
 	const [selectedIndex, setSelectedIndex] = useState(0)
 
+	const displayResults = useMemo(
+		() =>
+			options.collapseHash ? collapseSearchResultsByHash(results) : results,
+		[options.collapseHash, results],
+	)
+
 	// Count local ROMs in current results
 	const localCount = useMemo(
-		() => results.filter(r => r.isLocal).length,
-		[results],
+		() => displayResults.filter(r => r.isLocal).length,
+		[displayResults],
 	)
 
 	const selectedResult = useMemo(
-		() => results[selectedIndex] ?? null,
-		[results, selectedIndex],
+		() => displayResults[selectedIndex] ?? null,
+		[displayResults, selectedIndex],
 	)
 
 	// Subtitle for header
@@ -337,7 +348,7 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 		if (key.upArrow) {
 			setSelectedIndex(prev => Math.max(0, prev - 1))
 		} else if (key.downArrow) {
-			setSelectedIndex(prev => Math.min(results.length - 1, prev + 1))
+			setSelectedIndex(prev => Math.min(displayResults.length - 1, prev + 1))
 		} else if (key.leftArrow) {
 			prevPage()
 			setSelectedIndex(0)
@@ -350,7 +361,7 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 				setQuery("")
 			}
 		} else if (key.return) {
-			const selected = results[selectedIndex]
+			const selected = displayResults[selectedIndex]
 			if (!selected) return
 			if (selected.isLocal) {
 				setToast("Already downloaded")
@@ -390,10 +401,10 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 
 	// Reset selection when results change
 	useMemo(() => {
-		if (selectedIndex >= results.length) {
-			setSelectedIndex(Math.max(0, results.length - 1))
+		if (selectedIndex >= displayResults.length) {
+			setSelectedIndex(Math.max(0, displayResults.length - 1))
 		}
-	}, [results.length, selectedIndex])
+	}, [displayResults.length, selectedIndex])
 
 	return (
 		<Box flexDirection="column">
@@ -426,7 +437,7 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 			{error && <ErrorMsg>{error}</ErrorMsg>}
 
 			{/* Results list */}
-			{results.length > 0 ? (
+			{displayResults.length > 0 ? (
 				<Section title="Results">
 					<StatsBar
 						totalCount={totalCount}
@@ -435,7 +446,7 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 						localCount={localCount}
 						isLoading={isLoading}
 					/>
-					{results.map((result, index) => (
+					{displayResults.map((result, index) => (
 						<ResultRow
 							key={result.id}
 							result={result}

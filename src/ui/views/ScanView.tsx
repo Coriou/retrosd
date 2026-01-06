@@ -370,6 +370,23 @@ export function ScanView({ options, onComplete }: ScanViewProps) {
 											))}
 										</Box>
 									)}
+									{result.stats.coverage.hasSha1 > 0 && (
+										<Text color={colors.muted}>
+											Hash duplicates (SHA-1):{" "}
+											{result.stats.hashDuplicates.sha1.groups} groups,{" "}
+											{result.stats.hashDuplicates.sha1.extraCopies} extra
+											copies
+										</Text>
+									)}
+									{result.stats.coverage.hasSha1 === 0 &&
+										result.stats.coverage.hasCrc32 > 0 && (
+											<Text color={colors.muted}>
+												Hash duplicates (CRC32):{" "}
+												{result.stats.hashDuplicates.crc32.groups} groups,{" "}
+												{result.stats.hashDuplicates.crc32.extraCopies} extra
+												copies
+											</Text>
+										)}
 								</Box>
 							</Section>
 
