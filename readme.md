@@ -583,13 +583,6 @@ You can store your preferences and credentials in a configuration file to avoid 
   - Linux: `apt-get install mame-tools`
   - Windows: Download from [mamedev.org](https://www.mamedev.org/)
 
-### Install from NPM
-
-```bash
-npm install -g retrosd
-retrosd --help
-```
-
 ### Install from Source
 
 ```bash
