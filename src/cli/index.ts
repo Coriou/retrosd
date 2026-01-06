@@ -433,61 +433,6 @@ program
 			const { runSearchView } = await import("../ui/renderApp.js")
 			const result = await runSearchView(searchOpts)
 			if (result?.failed) await exitWithCode(1)
-
-			if (result?.nextAction?.type === "download") {
-				const { system, source, filename } = result.nextAction
-
-				const allEntries = getEntriesByKeys([system])
-				const selectedEntries = allEntries.filter(e => e.source === source)
-
-				if (selectedEntries.length === 0) {
-					console.error(
-						`\n❌ No downloader entry found for ${system} (${source})`,
-					)
-					if (allEntries.length > 0) {
-						console.error(
-							`   Found ${allEntries.length} entry(ies) for ${system} but with different source.`,
-						)
-						console.error(
-							`   Available: ${allEntries.map(e => e.source).join(", ")}`,
-						)
-					} else {
-						console.error(`   System ${system} is not configured for download.`)
-					}
-					await exitWithCode(1)
-					return
-				}
-
-				const config = loadConfig()
-				const romsDir = join(target, "Roms")
-				await createRomDirectories(romsDir)
-
-				const inkOptions = {
-					dbPath,
-					romsDir,
-					entries: selectedEntries,
-					dryRun: false,
-					verbose: Boolean(parentOptions.verbose),
-					jobs: 4,
-					retryCount: config.retryCount,
-					retryDelay: config.retryDelay,
-					update: false,
-					includePrerelease: false,
-					includeUnlicensed: false,
-					includeHacks: false,
-					includeHomebrew: false,
-					// applyFilters() normalizes filenames to lowercase for includeList matching
-					includeList: new Set([filename.trim().toLowerCase()]),
-					diskProfile: "balanced" as const,
-					enable1G1R: false,
-				}
-
-				const rendered = renderDownload(inkOptions)
-				await rendered.waitUntilExit()
-				const downloadResult = rendered.result
-
-				if (downloadResult?.failed) await exitWithCode(1)
-			}
 			return
 		}
 

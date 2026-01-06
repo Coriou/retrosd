@@ -3,15 +3,18 @@
  *
  * Provides a fast, filterable search experience for browsing the local catalog.
  * Supports text query, system/region filters, and pagination.
+ * Now includes background download queue for seamless multi-ROM downloading.
  *
  * @module ui/views/SearchView
  */
 import { Box, Text, useApp, useInput } from "ink"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useSearch } from "../hooks/useSearch.js"
+import { useDownloadQueue } from "../hooks/useDownloadQueue.js"
 import { Header, Section } from "../components/Header.js"
 import { Spinner } from "../components/Spinner.js"
 import { Success, Error as ErrorMsg, Warning } from "../components/Message.js"
+import { DownloadQueuePanel } from "../components/DownloadQueue.js"
 import { colors, symbols } from "../theme.js"
 import type { AppResult } from "../App.js"
 import {
@@ -264,15 +267,24 @@ function FilterBar({
 
 interface HelpBarProps {
 	query: string
+	convertChd: boolean
 }
 
-function HelpBar({ query }: HelpBarProps) {
+function HelpBar({ query, convertChd }: HelpBarProps) {
 	return (
 		<Box marginTop={1} gap={2}>
 			<Text color={colors.muted}>↑/↓ Select</Text>
 			<Text color={colors.muted}>←/→ Page</Text>
 			<Text color={colors.muted}>Enter Download</Text>
 			{query && <Text color={colors.muted}>Esc Clear</Text>}
+			<Text color={colors.muted}>
+				c CHD{" "}
+				{convertChd ? (
+					<Text color={colors.success}>✓</Text>
+				) : (
+					<Text color={colors.muted}>○</Text>
+				)}
+			</Text>
 			<Text color={colors.muted}>q Quit</Text>
 		</Box>
 	)
@@ -308,6 +320,48 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 
 	// Selection state
 	const [selectedIndex, setSelectedIndex] = useState(0)
+	const [queryInput, setQueryInput] = useState(options.query ?? "")
+	const [toast, setToast] = useState<string | null>(null)
+	const [lastCompletedCount, setLastCompletedCount] = useState(0)
+	const [convertChd, setConvertChd] = useState(false)
+
+	// Initialize download queue with CHD setting
+	const downloadQueue = useDownloadQueue({
+		targetDir: options.targetDir,
+		dbPath: options.dbPath,
+		maxConcurrent: 2,
+		autoExtract: true,
+		convertChd,
+	})
+	const {
+		addDownload,
+		active,
+		queue: allQueued,
+		completed,
+		failed,
+	} = downloadQueue
+
+	// Track recently completed downloads for notifications
+	useEffect(() => {
+		if (completed.length > lastCompletedCount) {
+			const newCompletions = completed.length - lastCompletedCount
+			if (newCompletions > 0) {
+				setToast(
+					newCompletions === 1
+						? `Download complete: ${completed[completed.length - 1]?.filename ?? "ROM"}`
+						: `${newCompletions} downloads completed`,
+				)
+			}
+			setLastCompletedCount(completed.length)
+		}
+	}, [completed.length, lastCompletedCount])
+
+	// Clear toast after 3 seconds
+	useEffect(() => {
+		if (!toast) return
+		const timer = setTimeout(() => setToast(null), 3000)
+		return () => clearTimeout(timer)
+	}, [toast])
 
 	const displayResults = useMemo(
 		() =>
@@ -330,10 +384,6 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 	const headerSubtitle = stats
 		? `${stats.totalRoms.toLocaleString()} ROMs in catalog`
 		: "Loading catalog..."
-
-	// Current query input (for display)
-	const [queryInput, setQueryInput] = useState(options.query ?? "")
-	const [toast, setToast] = useState<string | null>(null)
 
 	// Handle keyboard input
 	useInput((input, key) => {
@@ -368,19 +418,18 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 				return
 			}
 
-			onComplete?.({
-				success: true,
-				completed: 0,
-				failed: 0,
-				durationMs: 0,
-				nextAction: {
-					type: "download",
-					system: selected.system,
-					source: selected.source,
-					filename: selected.filename,
-				},
+			// Add to download queue instead of exiting
+			addDownload({
+				system: selected.system,
+				source: selected.source,
+				filename: selected.filename,
 			})
-			exit()
+			setToast(`Added to queue: ${selected.filename}`)
+		} else if (input === "c") {
+			setConvertChd(prev => !prev)
+			setToast(
+				convertChd ? "CHD conversion disabled" : "CHD conversion enabled",
+			)
 		} else if (input === "q") {
 			onComplete?.({
 				success: true,
@@ -476,7 +525,15 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 			)}
 
 			{/* Help bar */}
-			<HelpBar query={queryInput} />
+			<HelpBar query={queryInput} convertChd={convertChd} />
+
+			{/* Download Queue Panel */}
+			<DownloadQueuePanel
+				active={active}
+				queued={allQueued.filter(q => q.status === "queued")}
+				completed={completed.slice(-3)}
+				failed={failed.slice(-3)}
+			/>
 		</Box>
 	)
 }

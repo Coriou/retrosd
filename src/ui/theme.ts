@@ -23,6 +23,8 @@ export const symbols = {
 	bullet: "•",
 	arrow: "→",
 	ellipsis: "…",
+	download: "⬇",
+	hourglass: "⏳",
 } as const
 
 /** Progress bar characters */

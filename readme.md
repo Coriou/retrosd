@@ -208,7 +208,7 @@ retrosd convert /path/to/sdcard --delete-originals
 
 **Requirements:**
 
-- macOS: `brew install mame`
+- macOS: `brew install rom-tools`
 - Linux: `apt-get install mame-tools`
 
 **Redump archives:**
@@ -490,8 +490,8 @@ You can store your preferences and credentials in a configuration file to avoid 
 
 - **Node.js** 20+ (for running RetroSD)
 - **Git** (for cloning the repository)
-- **MAME Tools** (optional, for CHD conversion):
-  - macOS: `brew install mame`
+- **ROM / MAME Tools** (optional, for CHD conversion):
+  - macOS: `brew install rom-tools`
   - Linux: `apt-get install mame-tools`
   - Windows: Download from [mamedev.org](https://www.mamedev.org/)
 

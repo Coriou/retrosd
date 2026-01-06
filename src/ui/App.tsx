@@ -1,3 +1,4 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 /**
  * App - Root component for RetroSD Ink UI
  *

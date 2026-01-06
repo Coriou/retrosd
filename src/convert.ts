@@ -21,7 +21,7 @@ async function hasCommand(command: string): Promise<boolean> {
 }
 
 export function chdmanInstallHint(): string {
-	return "chdman not found. Install MAME tools: brew install mame (macOS) or apt-get install mame-tools (Linux)"
+	return "chdman not found. Install MAME tools: brew install rom-tools (macOS) or apt-get install mame-tools (Linux)"
 }
 
 export async function checkChdman(): Promise<

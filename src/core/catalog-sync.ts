@@ -1,3 +1,4 @@
+/* eslint-disable no-mixed-spaces-and-tabs */
 /**
  * Catalog Sync Engine
  *
@@ -64,10 +65,6 @@ export type CatalogSyncEvent =
 			totalRoms: number
 			durationMs: number
 	  }
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Constants
-// ═══════════════════════════════════════════════════════════════════════════════
 
 const SOURCE_URLS: Record<Source, string> = {
 	"no-intro": "https://myrient.erista.me/files/No-Intro",
