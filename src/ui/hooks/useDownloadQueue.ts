@@ -18,6 +18,7 @@ import { join } from "node:path"
 import { downloadRoms } from "../../core/downloader.js"
 import type { DownloaderOptions } from "../../core/types.js"
 import { log } from "../../logger.js"
+import { useLocalRomsTracker } from "./useLocalRomsTracker.js"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -119,6 +120,11 @@ export function useDownloadQueue(
 	const [queue, setQueue] = useState<QueuedDownload[]>([])
 	const processingRef = useRef(false)
 	const abortControllerRef = useRef<AbortController | null>(null)
+	// Keep convertChd as a ref so it can be checked dynamically right before conversion
+	// This allows users to toggle CHD on/off even while a download is extracting
+	const convertChdRef = useRef(convertChd)
+	// Track downloads to database for search results
+	const trackDownload = useLocalRomsTracker(dbPath ?? null)
 
 	// Add a download to the queue
 	const addDownload = useCallback(
@@ -185,6 +191,11 @@ export function useDownloadQueue(
 		setQueue([])
 		processingRef.current = false
 	}, [])
+
+	// Keep convertChd ref in sync with prop value
+	useEffect(() => {
+		convertChdRef.current = convertChd
+	}, [convertChd])
 
 	// Process queue
 	useEffect(() => {
@@ -296,8 +307,11 @@ export function useDownloadQueue(
 						}
 
 						case "complete": {
+							if (trackDownload) {
+								trackDownload(event)
+							}
 							log.download.debug(
-								{ filename: event.filename },
+								{ filename: event.filename, localPath: event.localPath },
 								"download completed",
 							)
 							break
@@ -310,7 +324,9 @@ export function useDownloadQueue(
 				}
 
 				// CHD conversion for eligible disc-based systems
-				if (convertChd && shouldConvertToChd(nextDownload.system)) {
+				// Check convertChdRef (current live state) instead of initial prop value
+				// This allows users to toggle CHD on/off right up until conversion
+				if (convertChdRef.current && shouldConvertToChd(nextDownload.system)) {
 					await performChdConversion(nextDownload, romsDir, setQueue)
 				}
 

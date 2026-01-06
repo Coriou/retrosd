@@ -341,7 +341,7 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 		failed,
 	} = downloadQueue
 
-	// Track recently completed downloads for notifications
+	// Track recently completed downloads for notifications and refresh search
 	useEffect(() => {
 		if (completed.length > lastCompletedCount) {
 			const newCompletions = completed.length - lastCompletedCount
@@ -351,10 +351,12 @@ export function SearchView({ options, onComplete }: SearchViewProps) {
 						? `Download complete: ${completed[completed.length - 1]?.filename ?? "ROM"}`
 						: `${newCompletions} downloads completed`,
 				)
+				// Refresh search results to update isLocal status for newly downloaded ROMs
+				search.refresh()
 			}
 			setLastCompletedCount(completed.length)
 		}
-	}, [completed.length, lastCompletedCount])
+	}, [completed.length, lastCompletedCount, search])
 
 	// Clear toast after 3 seconds
 	useEffect(() => {

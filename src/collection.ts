@@ -173,11 +173,16 @@ export async function scanCollection(
 	romsDir: string,
 	options: {
 		includeHashes?: boolean
+		systems?: string[]
 		verbose?: boolean
 		quiet?: boolean
 	} = {},
 ): Promise<CollectionManifest> {
 	const includeHashes = options.includeHashes ?? false
+	const systemsFilter =
+		options.systems && options.systems.length > 0
+			? new Set(options.systems)
+			: null
 	const verbose = options.verbose ?? false
 	const quiet = options.quiet ?? false
 
@@ -194,6 +199,9 @@ export async function scanCollection(
 
 	// Scan each system directory
 	for (const [systemName] of Object.entries(SYSTEM_SOURCE_MAP)) {
+		if (systemsFilter && !systemsFilter.has(systemName)) {
+			continue
+		}
 		const systemDir = join(romsDir, systemName)
 		const collection = await scanSystemDirectory(systemDir, systemName, {
 			includeHashes,

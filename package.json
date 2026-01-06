@@ -21,6 +21,7 @@
 		"build": "npm run build-file -- ./src/cli/index.ts ./src/index.ts",
 		"check": "npm run typecheck && npm run lint",
 		"cli": "npm run build && node ./dist/cli/index.js",
+		"sync-db": "npm run cli -- sync-db",
 		"dev": "concurrently --raw \"npm:dev:*\"",
 		"dev:build": "npm run build-file -- --watch=forever ./src/cli/index.ts",
 		"dev:run": "node --watch \"./dist/cli/index.js\"",

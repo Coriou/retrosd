@@ -175,6 +175,9 @@ const VERSION = "2.0.0"
 
 const program = new Command()
 
+// Allow options after positional arguments (better ergonomics for automation scripts).
+program.enablePositionalOptions()
+
 program
 	.name("retrosd")
 	.version(VERSION)
@@ -365,6 +368,51 @@ program
 
 		if (errors > 0) {
 			process.exit(1)
+		}
+	})
+
+// Add sync-db command (fast periodic DB refresh: remote + local)
+program
+	.command("sync-db")
+	.description(
+		"Sync remote catalogs and local ROM presence into the database (optimized for periodic runs)",
+	)
+	.argument("<target>", "Path to SD card root directory (database stored here)")
+	.option("--systems <list>", "Comma-separated system keys (default: all)")
+	.option("--force", "Force full resync, ignoring timestamps", false)
+	.option("-q, --quiet", "Minimal output", false)
+	.option("--verbose", "More detailed output", false)
+	.action(async (target, options, command) => {
+		setupPromptHandlers()
+		const parentOptions = command.parent?.opts?.() ?? {}
+
+		if (!existsSync(target)) {
+			ui.error(`Directory does not exist: ${target}`)
+			process.exit(1)
+		}
+
+		const dbPath = resolveDbPathForTarget(
+			target,
+			(parentOptions.dbPath as string | undefined) ?? undefined,
+		)
+		const systems = options.systems
+			? options.systems.split(",").map((s: string) => s.trim())
+			: undefined
+		const quiet = Boolean(options.quiet || parentOptions.quiet)
+		const verbose = Boolean(options.verbose || parentOptions.verbose)
+
+		const { runSyncDb } = await import("../core/sync-db.js")
+		const result = await runSyncDb({
+			targetDir: target,
+			dbPath,
+			systems,
+			force: options.force,
+			quiet,
+			verbose,
+		})
+
+		if (!result.ok) {
+			await exitWithCode(1)
 		}
 	})
 

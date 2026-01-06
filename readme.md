@@ -150,6 +150,9 @@ retrosd verify /path/to/sdcard
 **Usage:**
 
 ```bash
+# Efficient periodic refresh (remote catalog + local ROM presence)
+retrosd sync-db /path/to/sdcard
+
 # Build/update the local catalog database (stored in the target by default)
 retrosd sync /path/to/sdcard
 
@@ -168,6 +171,9 @@ retrosd search /path/to/sdcard 102 --systems=GBC --collapse-hash
 # Custom DB location (absolute path or relative to the target)
 retrosd sync /path/to/sdcard --db-path .retrosd/catalog.db
 retrosd search /path/to/sdcard pokemon --db-path .retrosd/catalog.db
+
+# For cron/automation (minimal output)
+npm run sync-db -- /path/to/sdcard --quiet
 ```
 
 **Database location:**
